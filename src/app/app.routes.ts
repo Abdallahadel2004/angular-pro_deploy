@@ -11,6 +11,9 @@ import { CheckEmail } from './components/check-email/check-email';
 import { EmailVerified } from './components/email-verified/email-verified';
 import { ForgotPassword } from './components/forgot-password/forgot-password';
 import { ResetPassword } from './components/reset-password/reset-password';
+import { AdminDashboard } from './components/admin-dashboard/admin-dashboard';
+import { Users } from './components/users/users';
+import { AdminLayout } from './components/admin-layout/admin-layout';
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
   { path: 'home', component: Home },
@@ -30,6 +33,16 @@ export const routes: Routes = [
     // ${clientUrl}/auth/verify-email/:token
     path: 'auth/verify-email/:token',
     component: EmailVerified,
+  },
+  {
+    path: 'admin',
+    component: AdminLayout,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: AdminDashboard },
+      { path: 'users', component: Users },
+      // add more admin child routes here
+    ],
   },
   { path: 'forgot-password', component: ForgotPassword },
   { path: 'reset-password/:id/:token', component: ResetPassword },

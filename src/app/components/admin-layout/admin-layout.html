@@ -1,0 +1,74 @@
+<div class="d-flex vh-100 overflow-hidden" id="admin-shell">
+  <aside class="sidebar d-flex flex-column transition-all" [class.collapsed]="sidebarCollapsed">
+    <div class="brand d-flex align-items-center gap-2 px-4 py-4 border-bottom border-secondary">
+      <i class="fas fa-crown text-primary fs-4"></i>
+      <span class="brand-name fw-bold text-uppercase text-white ls-wide small mb-0"
+        >Admin Panel</span
+      >
+    </div>
+
+    <nav class="nav nav-pills flex-column p-2 flex-grow-1 gap-1">
+      <a
+        routerLink="/admin/dashboard"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-3 py-2 px-3"
+      >
+        <i class="fas fa-tachometer-alt fw-icon"></i>
+        <span class="nav-text">Dashboard</span>
+      </a>
+      <a
+        routerLink="/admin/users"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-3 py-2 px-3"
+      >
+        <i class="fas fa-users fw-icon"></i>
+        <span class="nav-text">Users</span>
+      </a>
+      <a
+        routerLink="/admin/products"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-3 py-2 px-3"
+      >
+        <i class="fas fa-box fw-icon"></i>
+        <span class="nav-text">Products</span>
+      </a>
+      <a
+        routerLink="/admin/orders"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-3 py-2 px-3"
+      >
+        <i class="fas fa-shopping-cart fw-icon"></i>
+        <span class="nav-text">Orders</span>
+      </a>
+    </nav>
+
+    <div class="p-3 border-top border-secondary">
+      <button
+        (click)="logout()"
+        class="btn btn-outline-light border-0 w-100 d-flex flex-column align-items-start p-2 rounded-3 bg-opacity-10 bg-white"
+      >
+        <span class="text-primary fw-mono h5 mb-0">↪</span>
+        <span class="nav-text small text-uppercase ls-wide opacity-75">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-grow-1 d-flex flex-column bg-light overflow-auto">
+    <header class="navbar bg-white border-bottom px-4 py-3 sticky-top">
+      <button class="btn btn-link text-muted p-0 border-0" (click)="toggleSidebar()">
+        <i class="fas fa-bars fs-5"></i>
+      </button>
+
+      <div class="input-group ms-auto" style="max-width: 300px">
+        <span class="input-group-text bg-white border-end-0 text-muted">
+          <i class="fas fa-search"></i>
+        </span>
+        <input type="text" class="form-control border-start-0 ps-0" placeholder="Search..." />
+      </div>
+    </header>
+
+    <div class="p-4">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

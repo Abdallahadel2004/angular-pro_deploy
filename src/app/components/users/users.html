@@ -1,0 +1,231 @@
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div
+    class="toast show align-items-center text-white bg-success border-0"
+    role="alert"
+    *ngIf="successMessage"
+  >
+    <div class="d-flex">
+      <div class="toast-body"><i class="fas fa-check-circle me-2"></i> {{ successMessage }}</div>
+      <button
+        type="button"
+        class="btn-close btn-close-white me-2 m-auto"
+        (click)="successMessage = null"
+      ></button>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid p-4">
+  <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="h4 fw-bold mb-1">User Management</h2>
+      <p class="text-muted small mb-0">Showing {{ users.length }} of {{ totalUsers }} records</p>
+    </div>
+
+    <div class="input-group shadow-sm" style="max-width: 320px">
+      <span class="input-group-text bg-white border-end-0 text-muted"
+        ><i class="fas fa-search"></i
+      ></span>
+      <input
+        type="text"
+        class="form-control border-start-0 ps-0"
+        placeholder="Search users..."
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+  </header>
+
+  <div
+    class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4"
+    role="alert"
+    *ngIf="error"
+  >
+    <i class="fas fa-exclamation-triangle me-2"></i> {{ error }}
+    <button type="button" class="btn-close" (click)="error = null"></button>
+  </div>
+
+  <div class="card border-0 shadow-sm overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-muted small text-uppercase">
+          <tr>
+            <th class="ps-4">User</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngIf="loading" class="placeholder-glow">
+            <td colspan="6" class="p-0">
+              <div
+                *ngFor="let i of [1, 2, 3, 4, 5]"
+                class="d-flex align-items-center p-3 border-bottom"
+              >
+                <span
+                  class="placeholder rounded-circle me-3"
+                  style="width: 35px; height: 35px"
+                ></span>
+                <span class="placeholder col-2 me-4"></span>
+                <span class="placeholder col-3 me-4"></span>
+                <span class="placeholder col-1"></span>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && users.length === 0">
+            <td colspan="6" class="text-center py-5">
+              <div class="text-muted opacity-50 mb-2"><i class="fas fa-users-slash fs-1"></i></div>
+              <p class="text-muted">No users found matching your query.</p>
+            </td>
+          </tr>
+
+          <tr *ngFor="let user of users; trackBy: trackByUser">
+            <td class="ps-4">
+              <div class="d-flex align-items-center">
+                <div class="avatar-circle me-3 fw-bold shadow-sm" [attr.data-role]="user.role">
+                  {{ getInitials(user.name) }}
+                </div>
+                <span class="fw-semibold text-dark">{{ user.name }}</span>
+              </div>
+            </td>
+            <td class="text-muted fw-mono small">{{ user.email }}</td>
+            <td class="text-muted small">{{ user.phone || '—' }}</td>
+            <td>
+              <button
+                (click)="toggleRole(user)"
+                class="badge border-0 py-2 px-3 fw-semibold text-uppercase"
+                [ngClass]="
+                  user.role === 'admin'
+                    ? 'bg-primary-subtle text-primary'
+                    : 'bg-info-subtle text-info'
+                "
+              >
+                {{ user.role }}
+              </button>
+            </td>
+            <td>
+              <span
+                class="d-flex align-items-center gap-2 small fw-medium"
+                [class.text-success]="user.isConfirmed"
+                [class.text-muted]="!user.isConfirmed"
+              >
+                <span
+                  class="status-dot"
+                  [class.bg-success]="user.isConfirmed"
+                  [class.bg-secondary]="!user.isConfirmed"
+                ></span>
+                {{ user.isConfirmed ? 'Confirmed' : 'Pending' }}
+              </span>
+            </td>
+            <td class="text-end pe-4">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-light border text-muted px-2" (click)="openEditModal(user)">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button
+                  class="btn btn-light border text-danger px-2"
+                  (click)="openDeleteModal(user)"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      class="card-footer bg-white border-0 py-3 d-flex justify-content-center"
+      *ngIf="totalPages > 1 && !loading"
+    >
+      <nav>
+        <ul class="pagination pagination-sm mb-0 gap-2 d-flex flex-row">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <button class="page-link rounded" (click)="goToPage(currentPage - 1)">‹</button>
+          </li>
+
+          <li class="page-item" *ngFor="let p of pages" [class.active]="p === currentPage">
+            <button class="page-link rounded" (click)="goToPage(p)">
+              {{ p }}
+            </button>
+          </li>
+
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <button class="page-link rounded" (click)="goToPage(currentPage + 1)">›</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade show d-block"
+  tabindex="-1"
+  *ngIf="showEditModal"
+  style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px)"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold">Edit User</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="alert alert-danger py-2 small" *ngIf="modalError">{{ modalError }}</div>
+
+        <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label small fw-bold text-muted text-uppercase">Full Name</label>
+              <input
+                formControlName="name"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched"
+              />
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold text-muted text-uppercase">Email</label>
+              <input
+                formControlName="email"
+                type="email"
+                class="form-control"
+                [class.is-invalid]="
+                  editForm.get('email')?.invalid && editForm.get('email')?.touched
+                "
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted text-uppercase">Phone</label>
+              <input formControlName="phone" type="tel" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted text-uppercase">Address</label>
+              <input formControlName="address" type="text" class="form-control" />
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-light border px-4" (click)="closeEditModal()">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary px-4 fw-bold"
+              [disabled]="editForm.invalid || modalLoading"
+            >
+              <span *ngIf="!modalLoading">Save Changes</span>
+              <span *ngIf="modalLoading" class="spinner-border spinner-border-sm"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
