@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, Observable, throwError, timeout } from 'rxjs';
-import { tap } from 'rxjs/operators'; // ✅ ensure tap is imported
+import { tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { User } from '../models/user.model';
 import { AuthResponse } from '../models/authResponse.model';

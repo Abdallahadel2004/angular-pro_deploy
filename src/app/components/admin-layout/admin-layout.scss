@@ -1,0 +1,68 @@
+/* 1. Design Tokens & Branding */
+:root {
+  --bs-primary: #f97316; /* Your orange accent */
+  --bs-primary-rgb: 249, 115, 22;
+  --bs-dark: #1b1c1e; /* Your sidebar background */
+}
+
+/* 2. Sidebar Logic (Handles the collapsing width) */
+.sidebar {
+  background-color: var(--bs-dark);
+  width: 240px;
+  flex-shrink: 0;
+  z-index: 1000;
+}
+
+.sidebar.collapsed {
+  width: 75px;
+}
+
+/* Hide text when collapsed */
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .brand-name {
+  display: none;
+}
+
+/* 3. Navigation Styling */
+.nav-link {
+  color: #718096; /* muted */
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.nav-link.active {
+  background-color: rgba(var(--bs-primary-rgb), 0.15) !important;
+  color: var(--bs-primary) !important;
+  border-left: 3px solid var(--bs-primary);
+  border-radius: 0 !important; /* Sharp edge on active tab */
+}
+
+.fw-icon {
+  width: 20px;
+  text-align: center;
+}
+
+/* 4. Utilities */
+.transition-all {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ls-wide {
+  letter-spacing: 0.08em;
+}
+.fw-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--bs-dark);
+}
