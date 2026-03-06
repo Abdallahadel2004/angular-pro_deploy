@@ -41,9 +41,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductCardComponent } from '../product-card/product-card';
-// import { ServicesComponent } from '../services/services.component';
 import { Product } from '../../models/product.model';
-import { ProductService } from '../../services/product.service'; // Fix import
+import { ProductService } from '../../services/product.service';
+import { Observable } from 'rxjs';
 import { CartService } from '../../services/cart.service';
 
 type TabId = 'all' | 'new' | 'featured' | 'top';
@@ -56,7 +56,7 @@ interface Tab {
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, ProductCardComponent], // Add ServicesComponent here
+  imports: [CommonModule, ProductCardComponent],
   templateUrl: './product-list.component.html',
 })
 export class ProductListComponent implements OnInit {
@@ -70,15 +70,14 @@ export class ProductListComponent implements OnInit {
   ];
 
   products: Product[] = [];
+  products$!: Observable<Product[]>;
 
-  // wow delays cycle: 0.1s, 0.3s, 0.5s, 0.7s
   wowDelays = ['0.1s', '0.3s', '0.5s', '0.7s'];
 
-  // Fix constructor - inject ProductService, not ServicesComponent
   constructor(
     private productService: ProductService,
-    private cartService: CartService,
-  ) { }
+    private cartService: CartService
+  ) {}
 
   ngOnInit(): void {
     this.loadTab('all');
@@ -86,7 +85,16 @@ export class ProductListComponent implements OnInit {
 
   loadTab(tab: TabId): void {
     this.activeTab = tab;
-    this.products = this.productService.getByTab(tab); // Use productService
+    this.products$ = this.productService.getByTab(tab);
+
+    this.products$.subscribe({
+      next: (products) => {
+        this.products = products;
+      },
+      error: (err) => {
+        console.error('Failed to load products', err);
+      }
+    });
   }
 
   getDelay(index: number): string {
@@ -96,7 +104,7 @@ export class ProductListComponent implements OnInit {
   onAddToCart(product: Product): void {
     this.cartService.addToCart(product.id.toString(), 1).subscribe({
       next: () => console.log('Added to cart:', product.name),
-      error: (err: any) => console.error('Failed to add to cart', err),
+      error: (err) => console.error('Failed to add to cart', err),
     });
   }
 
