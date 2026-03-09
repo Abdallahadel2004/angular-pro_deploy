@@ -59,11 +59,11 @@
           @for (item of cartItems; track item._id) {
           <div class="row align-items-center mb-4 pb-2 border-bottom">
             <div class="col-md-2">
-              <img [src]="getProductImage(item)" class="img-fluid rounded" [alt]="item.product?.name" />
+              <img [src]="getProductImage(item)" class="img-fluid rounded" [alt]="item.product.name" />
             </div>
             <div class="col-md-4">
-              <h5 class="mb-1">{{ item.product?.name }}</h5>
-              <span class="text-primary fw-bold">${{ item.product?.price?.toFixed(2) }}</span>
+              <h5 class="mb-1">{{ item.product.name }}</h5>
+              <span class="text-primary fw-bold">${{ item.product.price.toFixed(2) }}</span>
             </div>
             <div class="col-md-3">
               <div class="input-group quantity" style="width: 120px">
@@ -78,7 +78,7 @@
               </div>
             </div>
             <div class="col-md-2 text-end">
-              <strong>${{ item.itemTotal?.toFixed(2) }}</strong>
+              <strong>${{ item.itemTotal.toFixed(2) }}</strong>
             </div>
             <div class="col-md-1 text-end">
               <a href="javascript:void(0)" class="text-danger" (click)="removeItem(item)">

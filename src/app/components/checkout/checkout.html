@@ -149,13 +149,13 @@
                     <!-- Cart Items -->
                     @for (item of cartItems; track item._id) {
                     <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                        <img [src]="getProductImage(item)" class="rounded me-3" [alt]="item.product?.name"
+                        <img [src]="getProductImage(item)" class="rounded me-3" [alt]="item.product.name"
                             style="width: 60px; height: 60px; object-fit: cover" />
                         <div class="flex-grow-1">
-                            <h6 class="mb-0 small">{{ item.product?.name }}</h6>
+                            <h6 class="mb-0 small">{{ item.product.name }}</h6>
                             <small class="text-muted">Qty: {{ item.quantity }}</small>
                         </div>
-                        <strong class="text-nowrap">${{ item.itemTotal?.toFixed(2) }}</strong>
+                        <strong class="text-nowrap">${{ item.itemTotal.toFixed(2) }}</strong>
                     </div>
                     }
 

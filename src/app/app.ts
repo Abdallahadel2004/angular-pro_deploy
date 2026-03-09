@@ -1,8 +1,5 @@
 import { Component, signal } from '@angular/core';
 import { NavbarComponent } from './components/navbar/navbar';
-import { CarouselComponent } from './components/carousel/carousel';
-import { ServicesComponent } from './components/services/services.component';
-import { ProductListComponent } from './components/product-list/product-list.component';
 import { FooterComponent } from './components/footer/footer';
 import { RouterOutlet } from '@angular/router';
 @Component({
@@ -10,9 +7,6 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [
     NavbarComponent,
-    CarouselComponent,
-    ProductListComponent,
-    ServicesComponent,
     FooterComponent,
     RouterOutlet,
   ],
