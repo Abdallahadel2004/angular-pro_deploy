@@ -1,0 +1,188 @@
+<div class="compare-page">
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="compare-header">
+    <div class="compare-header-inner">
+      <div>
+        <h4 class="mb-1 fw-bold">
+          <i class="fas fa-balance-scale me-2 text-primary"></i>Product Comparison
+        </h4>
+        <p class="text-muted small mb-0">Comparing {{ products.length }} products side by side</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" routerLink="/product">
+          <i class="fas fa-plus me-1"></i> Add Product
+        </button>
+        <button class="btn btn-outline-danger btn-sm" (click)="clearAndGoHome()">
+          <i class="fas fa-trash me-1"></i> Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="compare-tabs">
+      <button
+        class="compare-tab"
+        [class.active]="activeTab === 'table'"
+        (click)="activeTab = 'table'"
+      >
+        <i class="fas fa-table me-2"></i>Specs Table
+      </button>
+      <button
+        class="compare-tab"
+        [class.active]="activeTab === 'chat'"
+        (click)="activeTab = 'chat'"
+      >
+        <i class="fas fa-robot me-2"></i>Ask AI
+        <span class="tab-badge">AI</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Loading ──────────────────────────────────────────────────────────── -->
+  <div class="compare-loading" *ngIf="isLoading">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-3 text-muted">Analyzing products...</p>
+  </div>
+
+  <div class="compare-body" *ngIf="!isLoading">
+    <!-- ══════════════════ SPECS TABLE TAB ══════════════════════════════════ -->
+    <div *ngIf="activeTab === 'table'">
+      <!-- AI Summary banner -->
+      <div class="summary-banner" *ngIf="summary">
+        <i class="fas fa-bolt text-warning me-2"></i>
+        <span><strong>AI Summary:</strong> {{ summary }}</span>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="compare-table">
+          <!-- Product header row -->
+          <thead>
+            <tr>
+              <th class="spec-label-col"></th>
+              <th *ngFor="let p of products" class="product-col">
+                <div class="product-header-cell">
+                  <button class="remove-product-btn" (click)="removeProduct(p._id)" title="Remove">
+                    <i class="fas fa-times"></i>
+                  </button>
+                  <img
+                    [src]="p.image || 'assets/img/product-1.png'"
+                    [alt]="p.name"
+                    class="product-header-img"
+                    (error)="$any($event.target).src = 'assets/img/product-1.png'"
+                  />
+                  <div class="product-header-name">{{ p.name }}</div>
+                  <a
+                    [routerLink]="['/product', p._id]"
+                    class="btn btn-outline-primary btn-sm mt-2 w-100"
+                  >
+                    View Product
+                  </a>
+                </div>
+              </th>
+              <!-- Empty slot if only 2 products -->
+              <th *ngIf="products.length < 3" class="product-col">
+                <div class="empty-product-slot" routerLink="/product">
+                  <i class="fas fa-plus-circle"></i>
+                  <span>Add a product</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+
+          <!-- Spec rows -->
+          <tbody>
+            <tr *ngFor="let row of specRows" [class.long-row]="row.type === 'long'">
+              <td class="spec-label-col">
+                <i class="fas {{ row.icon }} me-2 text-primary opacity-75"></i>
+                {{ row.label }}
+              </td>
+              <td
+                *ngFor="let val of row.values"
+                class="spec-value-col"
+                [class.highlight]="val.highlight"
+                [class.stock-in]="row.type === 'stock' && val.inStock"
+                [class.stock-out]="row.type === 'stock' && val.inStock === false"
+              >
+                <!-- Rating row: show stars -->
+                <ng-container *ngIf="row.type === 'rating' && val.value !== 'No ratings'">
+                  <span class="stars">{{ getStars(toFloat(val.value)) }}</span>
+                  <span class="rating-text">{{ val.value }}</span>
+                </ng-container>
+                <!-- Default -->
+                <ng-container *ngIf="row.type !== 'rating'">
+                  <span
+                    [class.best-badge]="
+                      val.highlight && row.type !== 'stock' && row.type !== 'long'
+                    "
+                  >
+                    {{ val.value }}
+                  </span>
+                </ng-container>
+              </td>
+              <!-- Empty slot cell -->
+              <td *ngIf="products.length < 3" class="spec-value-col empty-col">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════ AI CHAT TAB ══════════════════════════════════════ -->
+    <div class="chat-tab" *ngIf="activeTab === 'chat'">
+      <!-- Mini product strip -->
+      <div class="chat-product-strip">
+        <div class="strip-product" *ngFor="let p of products">
+          <img
+            [src]="p.image || 'assets/img/product-1.png'"
+            [alt]="p.name"
+            (error)="$any($event.target).src = 'assets/img/product-1.png'"
+          />
+          <span>{{ p.name }}</span>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" #chatMessages>
+        <div
+          *ngFor="let msg of messages"
+          class="chat-msg"
+          [class.user]="msg.role === 'user'"
+          [class.assistant]="msg.role === 'assistant'"
+        >
+          <div class="msg-avatar" *ngIf="msg.role === 'assistant'">
+            <i class="fas fa-robot"></i>
+          </div>
+          <div class="msg-bubble">{{ msg.text }}</div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div class="chat-msg assistant" *ngIf="isTyping">
+          <div class="msg-avatar"><i class="fas fa-robot"></i></div>
+          <div class="msg-bubble typing"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Suggested questions -->
+      <div class="suggestions-row" *ngIf="messages.length <= 1">
+        <button class="suggestion-chip" *ngFor="let s of suggestions" (click)="sendMessage(s)">
+          {{ s }}
+        </button>
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-row">
+        <textarea
+          [(ngModel)]="inputText"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask anything about these products..."
+          rows="1"
+          [disabled]="isTyping"
+          class="chat-input"
+        ></textarea>
+        <button class="send-btn" (click)="sendMessage()" [disabled]="!inputText.trim() || isTyping">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

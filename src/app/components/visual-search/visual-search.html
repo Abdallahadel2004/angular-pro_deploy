@@ -1,0 +1,470 @@
+<!-- visual-search.component.html -->
+<section class="vs-root">
+  <!-- ═══════════════════════════════════════════ HEADER ══ -->
+  <header class="vs-header">
+    <div class="vs-header__eyebrow">AI-Powered</div>
+    <h1 class="vs-header__title"><span class="vs-header__title-visual">Visual</span> Search</h1>
+    <p class="vs-header__subtitle">Upload any image to find visually similar products instantly</p>
+  </header>
+
+  <!-- ══════════════════════════════════ SEARCH WORKSPACE ══ -->
+  <div class="vs-workspace">
+    <!-- ─────────────────────────── LEFT PANEL (upload + filters) ── -->
+    <div class="vs-panel vs-panel--left">
+      <!-- Upload Zone -->
+      <div
+        class="vs-dropzone"
+        [class.vs-dropzone--active]="isDragging"
+        [class.vs-dropzone--has-image]="!!previewUrl"
+        (dragenter)="onDropZoneDragEnter($event)"
+        (dragleave)="onDropZoneDragLeave($event)"
+        (drop)="onDropZoneDrop($event)"
+        (dragover)="$event.preventDefault()"
+        #dropZone
+      >
+        <!-- Preview image -->
+        <ng-container *ngIf="previewUrl; else emptyState">
+          <div class="vs-dropzone__preview">
+            <img [src]="previewUrl" alt="Search image preview" class="vs-dropzone__preview-img" />
+            <div class="vs-dropzone__preview-overlay">
+              <button
+                class="vs-btn vs-btn--ghost-white vs-btn--sm"
+                (click)="openFilePicker()"
+                [disabled]="isLoading"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Replace Image
+              </button>
+            </div>
+            <!-- File info badge -->
+            <div class="vs-dropzone__file-badge" *ngIf="selectedFile">
+              <span>{{ selectedFile.name }}</span>
+              <span class="vs-badge">{{ formatFileSize(selectedFile.size) }}</span>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Empty state -->
+        <ng-template #emptyState>
+          <div class="vs-dropzone__empty" (click)="openFilePicker()">
+            <div class="vs-dropzone__icon">
+              <svg viewBox="0 0 64 64" fill="none">
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="30"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-dasharray="4 4"
+                />
+                <path
+                  d="M32 20v16M24 28l8-8 8 8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="18"
+                  y="40"
+                  width="28"
+                  height="4"
+                  rx="2"
+                  fill="currentColor"
+                  opacity="0.3"
+                />
+              </svg>
+            </div>
+            <p class="vs-dropzone__title">
+              {{ isDragging ? 'Drop image here' : 'Drop image or click to upload' }}
+            </p>
+            <p class="vs-dropzone__hint">JPEG · PNG · WebP · up to 10 MB</p>
+
+            <div class="vs-dropzone__actions">
+              <button
+                class="vs-btn vs-btn--primary"
+                type="button"
+                (click)="$event.stopPropagation(); openFilePicker()"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Browse Files
+              </button>
+              <button
+                class="vs-btn vs-btn--outline"
+                type="button"
+                (click)="$event.stopPropagation(); openCamera()"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                Use Camera
+              </button>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Hidden file inputs -->
+      <input
+        #fileInput
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/bmp"
+        (change)="onFileSelected($event)"
+        style="display: none"
+      />
+      <input
+        #cameraInput
+        type="file"
+        accept="image/*"
+        capture="environment"
+        (change)="onFileSelected($event)"
+        style="display: none"
+      />
+
+      <!-- ─────── Keyword search ── -->
+      <div class="vs-keyword">
+        <label class="vs-label">Keyword (optional)</label>
+        <div class="vs-input-wrapper">
+          <svg
+            class="vs-input-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            class="vs-input"
+            type="text"
+            placeholder="e.g. red sneakers, floral dress…"
+            [(ngModel)]="filters.keyword"
+            [disabled]="isLoading"
+            (keyup.enter)="search()"
+          />
+        </div>
+      </div>
+
+      <!-- ─────── Filters toggle ── -->
+      <div class="vs-filters-toggle">
+        <button class="vs-btn vs-btn--ghost" (click)="showFilters = !showFilters" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          Filters
+          <span class="vs-badge" *ngIf="hasActiveFilters">Active</span>
+          <svg
+            class="vs-chevron"
+            [class.vs-chevron--open]="showFilters"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <button
+          class="vs-btn vs-btn--ghost vs-btn--sm"
+          *ngIf="hasActiveFilters"
+          (click)="clearFilters()"
+        >
+          Clear
+        </button>
+      </div>
+
+      <!-- ─────── Filter panel ── -->
+      <div class="vs-filter-panel" [class.vs-filter-panel--open]="showFilters">
+        <!-- Categories -->
+        <div class="vs-filter-group" *ngIf="categories.length">
+          <label class="vs-label">Categories</label>
+          <div class="vs-chip-group">
+            <button
+              class="vs-chip"
+              [class.vs-chip--active]="isCategorySelected(cat)"
+              *ngFor="let cat of categories"
+              (click)="toggleCategory(cat)"
+              type="button"
+            >
+              {{ cat }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Price range -->
+        <div class="vs-filter-group">
+          <label class="vs-label">Price Range</label>
+          <div class="vs-price-range">
+            <div class="vs-input-wrapper">
+              <span class="vs-input-prefix">$</span>
+              <input
+                class="vs-input vs-input--prefix"
+                type="number"
+                placeholder="Min"
+                [(ngModel)]="filters.minPrice"
+                [disabled]="isLoading"
+                min="0"
+              />
+            </div>
+            <span class="vs-price-separator">—</span>
+            <div class="vs-input-wrapper">
+              <span class="vs-input-prefix">$</span>
+              <input
+                class="vs-input vs-input--prefix"
+                type="number"
+                placeholder="Max"
+                [(ngModel)]="filters.maxPrice"
+                [disabled]="isLoading"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Results limit -->
+        <div class="vs-filter-group">
+          <label class="vs-label">Results: {{ filters.limit }}</label>
+          <input
+            class="vs-range"
+            type="range"
+            min="5"
+            max="50"
+            step="5"
+            [(ngModel)]="filters.limit"
+            [disabled]="isLoading"
+          />
+          <div class="vs-range-labels"><span>5</span><span>50</span></div>
+        </div>
+
+        <!-- Similarity threshold -->
+        <div class="vs-filter-group">
+          <label class="vs-label">
+            Min Similarity: {{ (filters.minScore * 100).toFixed(0) }}%
+          </label>
+          <input
+            class="vs-range"
+            type="range"
+            min="0.40"
+            max="0.95"
+            step="0.05"
+            [(ngModel)]="filters.minScore"
+            [disabled]="isLoading"
+          />
+          <div class="vs-range-labels"><span>40%</span><span>95%</span></div>
+        </div>
+      </div>
+
+      <!-- ─────── Search button ── -->
+      <div class="vs-actions">
+        <button
+          class="vs-btn vs-btn--search"
+          (click)="search()"
+          [disabled]="!selectedFile || isLoading"
+          type="button"
+        >
+          <ng-container *ngIf="isLoading; else searchLabel">
+            <div class="vs-spinner"></div>
+            Analyzing Image…
+          </ng-container>
+          <ng-template #searchLabel>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Find Similar Products
+          </ng-template>
+        </button>
+        <button
+          class="vs-btn vs-btn--ghost"
+          *ngIf="selectedFile"
+          (click)="reset()"
+          [disabled]="isLoading"
+          type="button"
+        >
+          Reset
+        </button>
+      </div>
+
+      <!-- Error message -->
+      <div class="vs-error" *ngIf="state === 'error' && errorMessage" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        {{ errorMessage }}
+      </div>
+    </div>
+
+    <!-- ──────────────────────────── RIGHT PANEL (results) ── -->
+    <div class="vs-panel vs-panel--right">
+      <!-- Results header -->
+      <div class="vs-results-header" *ngIf="state === 'results'">
+        <div class="vs-results-meta">
+          <span class="vs-results-count">{{ totalFound }} results</span>
+          <span class="vs-results-time">found in {{ searchTimeMs }}ms</span>
+        </div>
+        <div class="vs-results-filters-active" *ngIf="hasActiveFilters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          Filtered
+        </div>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div class="vs-grid" *ngIf="isLoading">
+        <div class="vs-skeleton" *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]">
+          <div class="vs-skeleton__image"></div>
+          <div class="vs-skeleton__body">
+            <div class="vs-skeleton__line vs-skeleton__line--wide"></div>
+            <div class="vs-skeleton__line vs-skeleton__line--narrow"></div>
+            <div class="vs-skeleton__line vs-skeleton__line--medium"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product grid -->
+      <div class="vs-grid" *ngIf="state === 'results' && products.length">
+        <article
+          class="vs-card"
+          *ngFor="let product of products; let i = index; trackBy: trackProduct"
+          [style.animation-delay]="i * 50 + 'ms'"
+        >
+          <!-- Product image -->
+          <div class="vs-card__image-wrap">
+            <img
+              [src]="product.image"
+              [alt]="product.name"
+              class="vs-card__image"
+              loading="lazy"
+              (error)="$any($event.target).src = 'assets/images/placeholder.png'"
+            />
+            <!-- Similarity score badge -->
+            <div
+              class="vs-card__score"
+              [class]="getScoreClass(product.similarityScore || 0)"
+              *ngIf="product.similarityScore"
+            >
+              {{ formatScore(product.similarityScore) }} match
+            </div>
+            <!-- Category badge -->
+            <div class="vs-card__category">{{ product.category }}</div>
+          </div>
+
+          <!-- Card body -->
+          <div class="vs-card__body">
+            <h3 class="vs-card__name" [title]="product.name">{{ product.name }}</h3>
+            <p class="vs-card__description" *ngIf="product.description">
+              {{ product.description }}
+            </p>
+
+            <!-- Rating -->
+            <div class="vs-card__rating" *ngIf="product.rating?.count">
+              <div class="vs-stars">
+                <span
+                  class="vs-star"
+                  *ngFor="let s of [1, 2, 3, 4, 5]"
+                  [class.vs-star--filled]="s <= (product.rating?.average || 0)"
+                  >★</span
+                >
+              </div>
+              <span class="vs-card__rating-count">({{ product.rating?.count }})</span>
+            </div>
+
+            <!-- Price + action -->
+            <div class="vs-card__footer">
+              <div class="vs-card__price">{{ formatPrice(product.price) }}</div>
+              <button class="vs-btn vs-btn--primary vs-btn--sm" type="button">View Product</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Empty results -->
+      <div class="vs-empty" *ngIf="state === 'results' && !products.length">
+        <div class="vs-empty__icon">
+          <svg viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="1.5" />
+            <path
+              d="M20 44s4-8 12-8 12 8 12 8"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <circle cx="22" cy="26" r="3" fill="currentColor" />
+            <circle cx="42" cy="26" r="3" fill="currentColor" />
+          </svg>
+        </div>
+        <h3>No matches found</h3>
+        <p>Try a different image or lower the similarity threshold.</p>
+        <button class="vs-btn vs-btn--outline" (click)="clearFilters(); search()">
+          Relax Filters
+        </button>
+      </div>
+
+      <!-- Idle state -->
+      <div class="vs-idle" *ngIf="state === 'idle'">
+        <div class="vs-idle__graphic">
+          <svg viewBox="0 0 120 120" fill="none">
+            <circle cx="60" cy="60" r="55" stroke="currentColor" stroke-width="1" opacity="0.15" />
+            <circle cx="60" cy="60" r="40" stroke="currentColor" stroke-width="1" opacity="0.25" />
+            <circle cx="60" cy="60" r="25" stroke="currentColor" stroke-width="1" opacity="0.4" />
+            <circle cx="60" cy="60" r="10" fill="currentColor" opacity="0.6" />
+            <!-- orbiting dots -->
+            <circle cx="60" cy="5" r="4" fill="currentColor" opacity="0.5">
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from="0 60 60"
+                to="360 60 60"
+                dur="8s"
+                repeatCount="indefinite"
+              />
+            </circle>
+            <circle cx="115" cy="60" r="3" fill="currentColor" opacity="0.3">
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from="0 60 60"
+                to="-360 60 60"
+                dur="12s"
+                repeatCount="indefinite"
+              />
+            </circle>
+          </svg>
+        </div>
+        <h3 class="vs-idle__title">Upload an image to begin</h3>
+        <p class="vs-idle__text">
+          Our AI will extract visual features and find the most similar products in the catalog.
+        </p>
+        <div class="vs-idle__tips">
+          <div class="vs-tip">
+            <span class="vs-tip__icon">📸</span>
+            <span>Photos of clothing, shoes, furniture, electronics…</span>
+          </div>
+          <div class="vs-tip">
+            <span class="vs-tip__icon">🎯</span>
+            <span>Clear product shots work best</span>
+          </div>
+          <div class="vs-tip">
+            <span class="vs-tip__icon">🔍</span>
+            <span>Add keywords to combine visual + text search</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

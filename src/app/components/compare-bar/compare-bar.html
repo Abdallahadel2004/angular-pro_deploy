@@ -1,0 +1,51 @@
+<!-- Floating compare bar — slides up when products are selected -->
+<div class="compare-bar" [class.visible]="compareService.count() > 0">
+  <div class="compare-bar-inner">
+    <!-- Left: label -->
+    <div class="compare-bar-label">
+      <i class="fas fa-balance-scale me-2"></i>
+      <span
+        >Compare <strong>{{ compareService.count() }}</strong> / 3 products</span
+      >
+    </div>
+
+    <!-- Center: product slots -->
+    <div class="compare-slots">
+      <ng-container *ngFor="let slot of [0, 1, 2]">
+        <!-- Filled slot -->
+        <div class="compare-slot filled" *ngIf="compareService.products()[slot] as p">
+          <img
+            [src]="p.image || 'assets/img/product-1.png'"
+            [alt]="p.name"
+            (error)="$any($event.target).src = 'assets/img/product-1.png'"
+          />
+          <div class="slot-name">{{ p.name }}</div>
+          <button class="slot-remove" (click)="compareService.remove(p._id)" title="Remove">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Empty slot -->
+        <div class="compare-slot empty" *ngIf="!compareService.products()[slot]">
+          <i class="fas fa-plus"></i>
+          <span>Add product</span>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Right: actions -->
+    <div class="compare-bar-actions">
+      <button
+        class="btn btn-primary compare-now-btn"
+        [disabled]="!compareService.canCompare()"
+        (click)="compareService.navigateToCompare()"
+      >
+        <i class="fas fa-chart-bar me-2"></i>
+        Compare Now
+      </button>
+      <button class="btn btn-link text-muted clear-btn" (click)="compareService.clear()">
+        Clear all
+      </button>
+    </div>
+  </div>
+</div>

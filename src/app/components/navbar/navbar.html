@@ -12,7 +12,6 @@
       <small class="text-dark">Call Us:</small>
       <a href="javascript:void(0)" class="text-muted">(+012) 1234 567890</a>
     </div>
-
     <div class="col-lg-4 text-center text-lg-end">
       <div class="d-inline-flex align-items-center" style="height: 45px">
         <!-- Currency Dropdown -->
@@ -30,9 +29,8 @@
               href="javascript:void(0)"
               class="dropdown-item"
               (click)="selectedCurrency = currency; isCurrencyDropdownOpen = false"
+              >{{ currency }}</a
             >
-              {{ currency }}
-            </a>
           </div>
         </div>
 
@@ -51,9 +49,8 @@
               href="javascript:void(0)"
               class="dropdown-item"
               (click)="selectedLanguage = language; isLanguageDropdownOpen = false"
+              >{{ language }}</a
             >
-              {{ language }}
-            </a>
           </div>
         </div>
 
@@ -80,7 +77,6 @@
                 <i class="fas fa-sign-out-alt me-1"></i> Log Out
               </a>
             </ng-container>
-
             <ng-template #guestMenu>
               <a routerLink="/signin" class="dropdown-item"> Login</a>
               <a routerLink="/signup" class="dropdown-item"> Create Account</a>
@@ -107,17 +103,31 @@
       </div>
     </div>
 
-    <!-- Search Bar -->
+    <!-- ── AI Smart Search Bar ──────────────────────────────────────────────── -->
     <div class="col-md-4 col-lg-6 text-center">
       <div class="position-relative ps-4">
-        <div class="d-flex border rounded-pill">
-          <input
-            class="form-control border-0 rounded-pill w-100 py-3"
-            type="text"
-            [(ngModel)]="searchQuery"
-            placeholder="Search Looking For?"
-          />
+        <!-- Search input row -->
+        <div
+          class="d-flex border rounded-pill smart-search-bar"
+          [class.suggest-open]="isSuggestOpen"
+        >
+          <!-- Input + AI badge wrapper -->
+          <div class="position-relative flex-grow-1">
+            <input
+              class="form-control border-0 rounded-pill w-100 py-3 ps-3 pe-5"
+              type="text"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onSearchInput()"
+              (keydown)="onSearchKeydown($event)"
+              (focus)="onSearchInput()"
+              placeholder="Search anything — try 'gaming headset' or 'gift under $50'..."
+              autocomplete="off"
+            />
+            <!-- AI pill badge inside input -->
+            <span class="ai-pill"> <i class="fas fa-bolt me-1"></i>AI </span>
+          </div>
 
+          <!-- Category select -->
           <select
             class="form-select text-dark border-0 border-start rounded-0 p-3"
             style="width: 200px"
@@ -126,6 +136,17 @@
             <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
           </select>
 
+          <!-- Visual Search camera button -->
+          <button
+            type="button"
+            class="visual-search-btn"
+            title="Search by image"
+            (click)="openVisualSearch()"
+          >
+            <i class="fas fa-camera"></i>
+          </button>
+
+          <!-- Search button -->
           <button
             type="button"
             class="btn btn-primary rounded-pill py-3 px-5"
@@ -135,8 +156,57 @@
             <i class="fas fa-search"></i>
           </button>
         </div>
+
+        <!-- ── Suggestions Dropdown ─────────────────────────────────────────── -->
+        <div
+          class="suggestions-dropdown"
+          *ngIf="isSuggestLoading || (isSuggestOpen && suggestions.length > 0)"
+        >
+          <!-- Loading spinner -->
+          <div class="suggest-loading" *ngIf="isSuggestLoading">
+            <span class="spinner-border spinner-border-sm me-2 text-primary"></span>
+            <span class="text-muted small">Finding products with AI...</span>
+          </div>
+
+          <!-- Results list -->
+          <ng-container *ngIf="!isSuggestLoading && suggestions.length > 0">
+            <div class="suggest-label">
+              <i class="fas fa-bolt text-warning me-1"></i>
+              <span>AI Suggestions</span>
+            </div>
+
+            <div
+              *ngFor="let p of suggestions; let i = index"
+              class="suggest-row"
+              [class.active]="activeSuggestion === i"
+              (mouseenter)="activeSuggestion = i"
+              (click)="selectSuggestion(p)"
+            >
+              <img
+                [src]="p.image || 'assets/img/product-1.png'"
+                [alt]="p.name"
+                class="suggest-thumb"
+                (error)="$any($event.target).src = 'assets/img/product-1.png'"
+              />
+              <div class="suggest-meta">
+                <div class="suggest-name">{{ p.name }}</div>
+                <div class="suggest-desc" *ngIf="p.shortDescription">{{ p.shortDescription }}</div>
+              </div>
+              <div class="suggest-price">${{ p.price | number: '1.2-2' }}</div>
+            </div>
+
+            <!-- View all results footer -->
+            <div class="suggest-footer" (click)="onSearch()">
+              <i class="fas fa-search me-1"></i>
+              See all results for <strong>"{{ searchQuery }}"</strong>
+              <i class="fas fa-arrow-right ms-1 small"></i>
+            </div>
+          </ng-container>
+        </div>
+        <!-- End Suggestions Dropdown -->
       </div>
     </div>
+    <!-- End Smart Search Bar -->
 
     <!-- Icons -->
     <div class="col-md-4 col-lg-3 text-center text-lg-end">
@@ -158,8 +228,8 @@
           class="text-muted d-flex align-items-center justify-content-center position-relative"
         >
           <span class="rounded-circle btn-md-square border"
-            ><i class="fas fa-shopping-cart"></i>
-          </span>
+            ><i class="fas fa-shopping-cart"></i
+          ></span>
           @if (cartService.cartItemCount() > 0) {
             <span
               class="position-absolute top-0 start-75 translate-middle badge rounded-pill bg-danger"
@@ -176,7 +246,7 @@
 </div>
 <!-- Main Header End -->
 
-<!-- Navbar & Hero Start -->
+<!-- Navbar Start -->
 <div class="container-fluid nav-bar p-0">
   <div class="row gx-0 bg-primary px-5 align-items-center">
     <!-- All Categories Sidebar (Desktop) -->
@@ -209,19 +279,14 @@
     <!-- Main Navigation -->
     <div class="col-12 col-lg-9">
       <nav class="navbar navbar-expand-lg navbar-light bg-primary">
-        <!-- Mobile Logo -->
         <a routerLink="/" class="navbar-brand d-block d-lg-none">
           <h1 class="display-5 text-secondary m-0">
             <i class="fas fa-shopping-bag text-white me-2"></i>Electro
           </h1>
         </a>
-
-        <!-- Mobile Toggle Button -->
         <button class="navbar-toggler ms-auto" type="button" (click)="toggleMobileMenu()">
           <span class="fa fa-bars fa-1x"></span>
         </button>
-
-        <!-- Navbar Links -->
         <div class="collapse navbar-collapse" [class.show]="isMobileMenuOpen">
           <div class="navbar-nav ms-auto py-0">
             <a
@@ -232,6 +297,14 @@
               >Home</a
             >
             <a routerLink="/product" routerLinkActive="active" class="nav-item nav-link">Shop</a>
+            <a
+              routerLink="/ai-setup-builder"
+              routerLinkActive="active"
+              class="nav-item nav-link ai-setup-link"
+            >
+              <i class="fas fa-magic me-1"></i>AI Setup
+              <span class="ai-setup-badge">NEW</span>
+            </a>
             <a routerLink="/single" routerLinkActive="active" class="nav-item nav-link"
               >Single Page</a
             >
@@ -245,6 +318,9 @@
                 >Pages</a
               >
               <div class="dropdown-menu m-0" [class.show]="isPagesDropdownOpen">
+                <a routerLink="/ai-setup-builder" class="dropdown-item">
+                  <i class="fas fa-magic me-1 text-primary"></i>AI Setup Builder
+                </a>
                 <a routerLink="/bestseller" class="dropdown-item">Bestseller</a>
                 <a routerLink="/cart" class="dropdown-item">Cart Page</a>
                 <a routerLink="/checkout" class="dropdown-item">Checkout</a>
@@ -275,9 +351,21 @@
                 </ul>
               </div>
             </div>
-          </div>
 
-          <!-- Phone Number Button -->
+            <!-- Mobile Search -->
+            <div class="d-flex d-lg-none px-3 pb-3">
+              <input
+                type="text"
+                class="form-control rounded-pill me-2"
+                [(ngModel)]="searchQuery"
+                (keydown.enter)="onSearch()"
+                placeholder="Search products..."
+              />
+              <button class="btn btn-secondary rounded-pill px-3" (click)="onSearch()">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
           <a
             href="tel:+01234567890"
             class="btn btn-secondary rounded-pill py-2 px-4 px-lg-3 mb-3 mb-md-3 mb-lg-0"
@@ -289,3 +377,126 @@
     </div>
   </div>
 </div>
+<!-- Navbar End -->
+
+<!-- ══════════════════ VISUAL SEARCH MODAL ══════════════════ -->
+<div class="vs-backdrop" *ngIf="isVisualSearchOpen" (click)="closeVisualSearch()"></div>
+
+<div class="vs-modal" [class.vs-modal--open]="isVisualSearchOpen">
+  <!-- Header -->
+  <div class="vs-modal__header">
+    <span class="vs-modal__title"> <i class="fas fa-camera me-2"></i>Search by Image </span>
+    <button class="vs-modal__close" (click)="closeVisualSearch()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="vs-modal__body">
+    <!-- Left: upload -->
+    <div class="vs-upload-panel">
+      <div
+        class="vs-dropzone"
+        [class.vs-dropzone--drag]="vsIsDragging"
+        [class.vs-dropzone--filled]="vsPreviewUrl"
+        (dragenter)="vsDragEnter($event)"
+        (dragleave)="vsDragLeave($event)"
+        (dragover)="$event.preventDefault()"
+        (drop)="vsDrop($event)"
+        (click)="vsFileInput.click()"
+      >
+        <ng-container *ngIf="vsPreviewUrl; else emptyDrop">
+          <img [src]="vsPreviewUrl" class="vs-dropzone__preview" alt="preview" />
+          <div class="vs-dropzone__overlay">
+            <span class="btn btn-sm btn-light"><i class="fas fa-exchange-alt me-1"></i>Change</span>
+          </div>
+        </ng-container>
+        <ng-template #emptyDrop>
+          <div class="vs-dropzone__hint">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>{{ vsIsDragging ? 'Drop it!' : 'Drop image or click to upload' }}</p>
+            <small>JPEG · PNG · WebP · max 10 MB</small>
+          </div>
+        </ng-template>
+      </div>
+      <input
+        #vsFileInput
+        type="file"
+        accept="image/*"
+        style="display: none"
+        (change)="vsOnFileSelected($event)"
+      />
+
+      <button
+        class="btn btn-primary w-100 mt-3"
+        [disabled]="!vsSelectedFile || vsIsLoading"
+        (click)="vsSearch()"
+      >
+        <span *ngIf="vsIsLoading" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!vsIsLoading" class="fas fa-search me-2"></i>
+        {{ vsIsLoading ? 'Analyzing…' : 'Find Similar Products' }}
+      </button>
+
+      <div class="alert alert-danger mt-2 py-2 small mb-0" *ngIf="vsError">
+        <i class="fas fa-exclamation-circle me-1"></i>{{ vsError }}
+      </div>
+    </div>
+
+    <!-- Right: results -->
+    <div class="vs-results-panel">
+      <!-- Idle -->
+      <div class="vs-state-msg" *ngIf="!vsIsLoading && vsResults.length === 0 && !vsSearchDone">
+        <i class="fas fa-camera-retro"></i>
+        <p>Upload a photo to find visually similar products</p>
+      </div>
+
+      <!-- No results -->
+      <div class="vs-state-msg" *ngIf="!vsIsLoading && vsResults.length === 0 && vsSearchDone">
+        <i class="fas fa-search"></i>
+        <p>No similar products found — try another image</p>
+      </div>
+
+      <!-- Skeletons -->
+      <div class="vs-grid" *ngIf="vsIsLoading">
+        <div class="vs-skeleton" *ngFor="let n of [1, 2, 3, 4, 5, 6]">
+          <div class="vs-skeleton__img"></div>
+          <div class="vs-skeleton__line"></div>
+          <div class="vs-skeleton__line vs-skeleton__line--short"></div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <ng-container *ngIf="!vsIsLoading && vsResults.length > 0">
+        <div class="vs-results-meta">
+          <span>{{ vsResults.length }} products found</span>
+          <span class="text-muted small">{{ vsSearchTimeMs }}ms</span>
+        </div>
+        <div class="vs-grid">
+          <div class="vs-card" *ngFor="let p of vsResults" (click)="vsGoToProduct(p._id)">
+            <div class="vs-card__img">
+              <img
+                [src]="p.image || 'assets/img/product-1.png'"
+                [alt]="p.name"
+                (error)="$any($event.target).src = 'assets/img/product-1.png'"
+              />
+              <span
+                class="vs-badge"
+                [class.vs-badge--green]="(p.similarityScore || 0) >= 0.8"
+                [class.vs-badge--yellow]="
+                  (p.similarityScore || 0) >= 0.65 && (p.similarityScore || 0) < 0.8
+                "
+              >
+                {{ ((p.similarityScore || 0) * 100).toFixed(0) }}%
+              </span>
+            </div>
+            <div class="vs-card__body">
+              <div class="vs-card__name">{{ p.name }}</div>
+              <div class="vs-card__price">${{ p.price | number: '1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>
+<!-- ══════════════════ END VISUAL SEARCH MODAL ══════════════════ -->

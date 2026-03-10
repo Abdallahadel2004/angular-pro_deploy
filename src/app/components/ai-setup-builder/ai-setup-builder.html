@@ -1,0 +1,364 @@
+<!-- Auth toast -->
+<div class="auth-toast" [class.auth-toast--show]="showAuthToast">
+  <i class="fas fa-lock me-2"></i>
+  <span>Please sign in to add items to your cart</span>
+  <button class="btn btn-sm btn-secondary ms-3 rounded-pill" (click)="goToSignIn()">Sign In</button>
+  <button class="auth-toast-close ms-2" (click)="showAuthToast = false">
+    <i class="fas fa-times"></i>
+  </button>
+</div>
+
+<!-- Page Header -->
+<div class="page-header text-center">
+  <div class="container">
+    <span class="badge bg-secondary rounded-pill px-3 py-2 mb-3">
+      <i class="fas fa-robot me-2"></i>AI Powered
+    </span>
+    <h1 class="text-white fw-bold display-5 mb-2">AI Setup Builder</h1>
+    <p class="text-white-50 mb-0">
+      Pick a preset or describe any setup — AI finds the perfect products from the store
+    </p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <!-- Builder Card -->
+  <div class="card border-0 shadow rounded-3 p-4 mx-auto mb-4" style="max-width: 920px">
+    <!-- Mode Toggle -->
+    <div class="btn-group w-100 mb-4" role="group">
+      <button
+        type="button"
+        class="btn btn-lg fw-semibold"
+        [class.btn-dark]="mode === 'preset'"
+        [class.btn-outline-secondary]="mode !== 'preset'"
+        (click)="mode = 'preset'"
+      >
+        <i class="fas fa-th-large me-2"></i>Choose Preset
+      </button>
+      <button
+        type="button"
+        class="btn btn-lg fw-semibold"
+        [class.btn-dark]="mode === 'custom'"
+        [class.btn-outline-secondary]="mode !== 'custom'"
+        (click)="mode = 'custom'"
+      >
+        <i class="fas fa-magic me-2"></i>Custom Setup
+      </button>
+    </div>
+
+    <div class="row g-4 align-items-start">
+      <!-- PRESET MODE -->
+      <div class="col-md-6" *ngIf="mode === 'preset'">
+        <p class="text-uppercase text-muted small fw-bold mb-2">
+          <i class="fas fa-layer-group me-1"></i>Select Setup Type
+        </p>
+        <div class="list-group list-group-flush rounded-3 border overflow-hidden">
+          <button
+            *ngFor="let t of templates"
+            type="button"
+            class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 px-3 border-0 border-bottom"
+            [class.active]="selectedSetup === t.key"
+            (click)="selectedSetup = t.key; onSetupTypeChange()"
+          >
+            <span class="fs-4">{{ setupIcons[t.key] || '⚙️' }}</span>
+            <span class="fw-semibold">{{ t.label }}</span>
+            <i class="fas fa-check ms-auto" *ngIf="selectedSetup === t.key"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- CUSTOM MODE -->
+      <div class="col-md-6" *ngIf="mode === 'custom'">
+        <p class="text-uppercase text-muted small fw-bold mb-2">
+          <i class="fas fa-keyboard me-1"></i>Describe Your Setup
+        </p>
+        <textarea
+          class="form-control rounded-3 mb-2"
+          [(ngModel)]="customPrompt"
+          placeholder="e.g. A complete music production studio, budget podcast kit under $500..."
+          rows="5"
+        ></textarea>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <small class="text-muted fw-semibold">Try:</small>
+          <button
+            *ngFor="let ex of examplePrompts"
+            type="button"
+            class="btn btn-sm btn-outline-secondary rounded-pill"
+            (click)="useExample(ex)"
+          >
+            {{ ex }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Budget + Generate -->
+      <div class="col-md-6 d-flex flex-column gap-4">
+        <div>
+          <p class="text-uppercase text-muted small fw-bold mb-2">
+            <i class="fas fa-dollar-sign me-1"></i>Budget
+            <span class="text-muted fw-normal">(optional)</span>
+          </p>
+          <div class="input-group mb-2">
+            <span class="input-group-text fw-bold">$</span>
+            <input
+              type="number"
+              class="form-control form-control-lg"
+              placeholder="e.g. 1000"
+              [(ngModel)]="budget"
+              min="50"
+              step="50"
+            />
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="budget = 500">
+              $500
+            </button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="budget = 1000">
+              $1K
+            </button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="budget = 2000">
+              $2K
+            </button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" (click)="budget = null">
+              Any
+            </button>
+          </div>
+        </div>
+
+        <button
+          class="btn btn-secondary btn-lg rounded-pill fw-bold py-3 mt-auto"
+          [disabled]="!canGenerate"
+          (click)="generateSetup()"
+        >
+          <ng-container *ngIf="!isLoading">
+            <i class="fas fa-magic me-2"></i>Generate Setup
+          </ng-container>
+          <ng-container *ngIf="isLoading">
+            <span class="spinner-border spinner-border-sm me-2"></span>AI is building...
+          </ng-container>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div
+    class="alert alert-danger d-flex align-items-center rounded-3 mx-auto"
+    style="max-width: 920px"
+    *ngIf="errorMsg"
+  >
+    <i class="fas fa-exclamation-circle me-2 fs-5"></i>
+    <span>{{ errorMsg }}</span>
+  </div>
+
+  <!-- Skeleton Loader -->
+  <div *ngIf="isLoading" class="mt-2">
+    <div class="text-center mb-4">
+      <span
+        class="badge bg-dark rounded-pill px-4 py-2 fs-6 gap-1 d-inline-flex align-items-center"
+      >
+        <span class="ai-dot"></span>
+        <span class="ai-dot"></span>
+        <span class="ai-dot"></span>
+        <span class="ms-1">AI is selecting the best products for your setup...</span>
+      </span>
+    </div>
+    <div class="row g-4">
+      <div class="col-6 col-md-4 col-xl-3" *ngFor="let s of skeletonSlots">
+        <div class="card border-0 shadow-sm overflow-hidden h-100">
+          <div class="skeleton-img"></div>
+          <div class="card-body">
+            <div class="skeleton-line w-50 mb-2"></div>
+            <div class="skeleton-line w-75 mb-2"></div>
+            <div class="skeleton-line w-40"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div *ngIf="hasResult && !isLoading" class="mt-2">
+    <!-- Summary card -->
+    <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+      <div class="row align-items-center g-3 mb-3">
+        <div class="col">
+          <h4 class="fw-bold mb-1">{{ setupIcons[selectedSetup] || '✨' }} {{ setupLabel }}</h4>
+          <small class="text-muted">
+            <i class="fas fa-bolt me-1 text-warning"></i>Generated in {{ generatedIn }}
+            &nbsp;·&nbsp;
+            <i class="fas fa-box me-1"></i>{{ products.length }} products found
+          </small>
+        </div>
+        <div class="col-auto text-end">
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Bundle Total</div>
+          <div class="fs-2 fw-bold">${{ totalPrice | number: '1.2-2' }}</div>
+          <span class="badge bg-success rounded-pill" *ngIf="savingsVsBudget">
+            <i class="fas fa-piggy-bank me-1"></i>${{ savingsVsBudget }} under budget
+          </span>
+          <span
+            class="badge bg-warning text-dark rounded-pill"
+            *ngIf="budget && totalPrice > budget"
+          >
+            <i class="fas fa-exclamation-triangle me-1"></i>Slightly over budget
+          </span>
+        </div>
+      </div>
+
+      <!-- AI explanation -->
+      <div
+        class="alert alert-light border-start border-4 border-secondary mb-3 py-2 rounded-3"
+        *ngIf="explanation"
+      >
+        <i class="fas fa-robot me-2 text-secondary"></i>
+        <span class="text-muted">{{ explanation }}</span>
+      </div>
+
+      <!-- Budget bar -->
+      <div *ngIf="budget">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>$0</span><span>Budget: ${{ budget }}</span>
+        </div>
+        <div class="progress rounded-pill" style="height: 6px">
+          <div
+            class="progress-bar rounded-pill"
+            [class.bg-success]="totalPrice <= budget"
+            [class.bg-warning]="totalPrice > budget"
+            [style.width.%]="getBudgetPercent()"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product cards — same structure as search-results / product-list -->
+    <div class="container-fluid product py-5">
+      <div class="container py-5">
+        <div class="tab-class">
+          <div class="tab-content">
+            <div class="tab-pane fade show active p-0">
+              <div class="row g-4">
+                <div
+                  *ngFor="let product of products; let i = index"
+                  class="col-md-6 col-lg-4 col-xl-3"
+                >
+                  <app-product-card
+                    [product]="product"
+                    [wowDelay]="getDelay(i)"
+                    (addToCart)="onAddToCart($event)"
+                    (addToWishlist)="onAddToWishlist($event)"
+                    (quickView)="onQuickView($event)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dark outro — blends into footer -->
+<div class="bg-dark py-5 mt-5 text-center" *ngIf="hasResult && !isLoading">
+  <div class="container">
+    <h5 class="text-white fw-bold mb-1">Your {{ setupLabel }} is ready</h5>
+    <p class="text-white-50 mb-4">
+      {{ products.length }} products &middot; ${{ totalPrice | number: '1.2-2' }} total
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <button
+        class="btn btn-secondary btn-lg rounded-pill px-5 fw-semibold"
+        (click)="addAllToCart()"
+        [disabled]="addingToCart"
+      >
+        <ng-container *ngIf="!addingToCart && !cartSuccess">
+          <i class="fas fa-shopping-cart me-2"></i>
+          Add Entire Setup to Cart — ${{ totalPrice | number: '1.2-2' }}
+        </ng-container>
+        <ng-container *ngIf="addingToCart">
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Adding {{ products.length }} items...
+        </ng-container>
+        <ng-container *ngIf="cartSuccess && !addingToCart">
+          <i class="fas fa-check-circle me-2"></i>All {{ products.length }} items added!
+        </ng-container>
+      </button>
+      <button
+        class="btn btn-outline-light btn-lg rounded-pill px-4 fw-semibold"
+        (click)="generateSetup()"
+      >
+        <i class="fas fa-redo me-2"></i>Regenerate
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-0" *ngIf="selectedProductForQuickView">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-6">
+            <img
+              [src]="selectedProductForQuickView.image || 'assets/img/product-1.png'"
+              class="img-fluid rounded-3"
+              [alt]="selectedProductForQuickView.name"
+            />
+          </div>
+          <div class="col-md-6">
+            <h3 class="fw-bold mb-2">{{ selectedProductForQuickView.name }}</h3>
+            <p class="text-muted small mb-2">{{ selectedProductForQuickView.category }}</p>
+            <div class="d-flex align-items-center mb-3">
+              <div class="text-warning me-2">
+                <i
+                  *ngFor="let star of [1, 2, 3, 4, 5]; let i = index"
+                  class="fas fa-star"
+                  [class.text-warning]="i < (selectedProductForQuickView.rating || 0)"
+                  [class.text-secondary]="i >= (selectedProductForQuickView.rating || 0)"
+                ></i>
+              </div>
+              <!-- FIX: cast to $any to access runtime-only ratingCount field -->
+              <span class="text-muted small"
+                >({{ $any(selectedProductForQuickView).ratingCount || 0 }})</span
+              >
+            </div>
+            <h4 class="fw-bold text-primary mb-3">
+              {{ selectedProductForQuickView.newPrice }}
+              <span
+                class="text-decoration-line-through text-muted small fw-normal ms-2"
+                *ngIf="
+                  selectedProductForQuickView.oldPrice !== selectedProductForQuickView.newPrice
+                "
+              >
+                {{ selectedProductForQuickView.oldPrice }}
+              </span>
+            </h4>
+            <p class="mb-4">{{ selectedProductDescription }}</p>
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-primary flex-grow-1 rounded-pill"
+                (click)="onAddToCart(selectedProductForQuickView)"
+                data-bs-dismiss="modal"
+              >
+                <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+              </button>
+              <button
+                class="btn btn-outline-secondary rounded-pill"
+                (click)="onAddToWishlist(selectedProductForQuickView)"
+                data-bs-dismiss="modal"
+              >
+                <i class="fas fa-heart"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-compare-bar></app-compare-bar>

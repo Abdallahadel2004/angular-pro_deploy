@@ -1,18 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { catchError, takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
+import { SearchService, SearchProduct } from '../../services/search.service';
+import { VisualSearchService, Product } from '../../services/visual-search.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
+  providers: [VisualSearchService],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.scss'],
 })
-export class NavbarComponent implements OnInit {
+export class Navbar implements OnInit, OnDestroy {
   isLoading = true;
   isCurrencyDropdownOpen = false;
   isLanguageDropdownOpen = false;
@@ -22,12 +27,18 @@ export class NavbarComponent implements OnInit {
   isMobileCategoriesOpen = false;
   isMobileMenuOpen = false;
 
+  // ── Smart Search ──────────────────────────────────────────────────────────
   searchQuery = '';
   selectedCategory = 'All Category';
+  suggestions: SearchProduct[] = [];
+  isSuggestOpen = false;
+  isSuggestLoading = false;
+  activeSuggestion = -1; // keyboard nav index
+
   selectedCurrency = 'USD';
   selectedLanguage = 'English';
 
-  categories = ['All Category', 'Category 1', 'Category 2', 'Category 3', 'Category 4'];
+  categories = ['All Category', 'Electronics', 'Fashion', 'Gaming', 'Fitness', 'Books', 'Home'];
   currencies = ['USD', 'Euro', 'Dolar'];
   languages = ['English', 'Turkish', 'Spanish', 'Italiano'];
 
@@ -39,18 +50,128 @@ export class NavbarComponent implements OnInit {
     { name: 'SmartPhone & Smart TV', count: 5 },
   ];
 
-  // Inject the AuthService here
+  // ── Visual Search ─────────────────────────────────────────────────────────
+  isVisualSearchOpen = false;
+  vsSelectedFile: File | null = null;
+  vsPreviewUrl: string | null = null;
+  vsIsLoading = false;
+  vsIsDragging = false;
+  vsResults: Product[] = [];
+  vsError = '';
+  vsSearchTimeMs = 0;
+  vsSearchDone = false;
+
+  private searchInput$ = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
   constructor(
     public authService: AuthService,
     public cartService: CartService,
-  ) { }
+    private searchService: SearchService,
+    private visualSearchService: VisualSearchService,
+    private router: Router,
+    private elRef: ElementRef,
+  ) {}
 
   ngOnInit() {
-    setTimeout(() => {
-      this.isLoading = false;
-    }, 500);
-    // Load cart on init for badge count
+    setTimeout(() => (this.isLoading = false), 500);
     this.cartService.loadCart();
+
+    // Debounced suggestions pipeline
+    this.searchInput$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          if (q.trim().length < 2) {
+            this.suggestions = [];
+            this.isSuggestOpen = false;
+            return of(null);
+          }
+          this.isSuggestLoading = true;
+          return this.searchService.getSuggestions(q).pipe(catchError(() => of(null)));
+        }),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((res: any) => {
+        this.isSuggestLoading = false;
+        if (res?.products) {
+          this.suggestions = res.products;
+          this.isSuggestOpen = this.suggestions.length > 0;
+          this.activeSuggestion = -1;
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.vsPreviewUrl) URL.revokeObjectURL(this.vsPreviewUrl);
+  }
+
+  // Called on every keystroke in the search input
+  onSearchInput(): void {
+    this.searchInput$.next(this.searchQuery);
+  }
+
+  // Keyboard navigation: ArrowUp/Down to browse, Enter to select or search, Escape to close
+  onSearchKeydown(event: KeyboardEvent): void {
+    if (!this.isSuggestOpen) {
+      if (event.key === 'Enter') this.onSearch();
+      return;
+    }
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.activeSuggestion = Math.min(this.activeSuggestion + 1, this.suggestions.length - 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.activeSuggestion = Math.max(this.activeSuggestion - 1, -1);
+        break;
+      case 'Enter':
+        event.preventDefault();
+        this.activeSuggestion >= 0
+          ? this.selectSuggestion(this.suggestions[this.activeSuggestion])
+          : this.onSearch();
+        break;
+      case 'Escape':
+        this.closeSuggestions();
+        break;
+    }
+  }
+
+  // Clicking a suggestion goes directly to product detail
+  selectSuggestion(product: SearchProduct): void {
+    this.searchQuery = product.name;
+    this.isSuggestOpen = false;
+    this.router.navigate(['/product', product._id]);
+  }
+
+  // Main search → /search results page
+  onSearch(): void {
+    const q = this.searchQuery.trim();
+    if (!q) return;
+    this.closeSuggestions();
+    this.router.navigate(['/search'], {
+      queryParams: {
+        q,
+        ...(this.selectedCategory !== 'All Category' ? { category: this.selectedCategory } : {}),
+      },
+    });
+  }
+
+  closeSuggestions(): void {
+    this.isSuggestOpen = false;
+    this.activeSuggestion = -1;
+  }
+
+  // Close suggestions when clicking outside the navbar component
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.elRef.nativeElement.contains(event.target)) {
+      this.closeSuggestions();
+    }
   }
 
   toggleDropdown(dropdown: string) {
@@ -62,18 +183,89 @@ export class NavbarComponent implements OnInit {
   toggleAllCategories() {
     this.isAllCategoriesOpen = !this.isAllCategoriesOpen;
   }
-
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
-  onSearch() {
-    console.log('Searching:', this.searchQuery, 'in:', this.selectedCategory);
-  }
-
-  // Add the logout method
   logout() {
     this.authService.signout();
-    this.isDashboardDropdownOpen = false; // Close the dropdown menu after clicking
+    this.isDashboardDropdownOpen = false;
+  }
+
+  // ── Visual Search ─────────────────────────────────────────────────────────
+
+  openVisualSearch(): void {
+    this.isVisualSearchOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeVisualSearch(): void {
+    this.isVisualSearchOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  vsOnFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) this.vsHandleFile(file);
+  }
+
+  vsDragEnter(e: DragEvent): void {
+    e.preventDefault();
+    this.vsIsDragging = true;
+  }
+  vsDragLeave(e: DragEvent): void {
+    e.preventDefault();
+    this.vsIsDragging = false;
+  }
+
+  vsDrop(e: DragEvent): void {
+    e.preventDefault();
+    this.vsIsDragging = false;
+    const file = e.dataTransfer?.files?.[0];
+    if (file) this.vsHandleFile(file);
+  }
+
+  private vsHandleFile(file: File): void {
+    const validation = this.visualSearchService.validateFile(file);
+    if (!validation.valid) {
+      this.vsError = validation.error!;
+      return;
+    }
+    if (this.vsPreviewUrl) URL.revokeObjectURL(this.vsPreviewUrl);
+    this.vsSelectedFile = file;
+    this.vsPreviewUrl = URL.createObjectURL(file);
+    this.vsResults = [];
+    this.vsError = '';
+    this.vsSearchDone = false;
+  }
+
+  vsSearch(): void {
+    if (!this.vsSelectedFile) return;
+    this.vsIsLoading = true;
+    this.vsError = '';
+    this.vsResults = [];
+    this.vsSearchDone = false;
+
+    this.visualSearchService
+      .search(this.vsSelectedFile, { limit: 8, minScore: 0.75 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.vsResults = res.products;
+          this.vsSearchTimeMs = res.searchTimeMs;
+          this.vsIsLoading = false;
+          this.vsSearchDone = true;
+        },
+        error: (err) => {
+          this.vsError = err.message ?? 'Something went wrong';
+          this.vsIsLoading = false;
+          this.vsSearchDone = true;
+        },
+      });
+  }
+
+  vsGoToProduct(id: string): void {
+    this.closeVisualSearch();
+    this.router.navigate(['/product', id]);
   }
 }
