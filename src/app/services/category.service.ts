@@ -3,12 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Category } from '../models/category.model';
-
+import { environment } from '../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class CategoryService {
-  private apiUrl = 'https://back-omega-amber.vercel.app/api/categories';
+  private apiUrl = `${environment.apiUrl}/api/categories`;
 
   constructor(private http: HttpClient) {}
 
