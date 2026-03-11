@@ -1,0 +1,112 @@
+// Only 4 things Bootstrap can't do on its own:
+// 1. page-header background image
+// 2. skeleton shimmer animation
+// 3. ai-dot pulse animation
+// 4. auth toast slide-up animation
+
+.page-header {
+  padding: 80px 0 90px;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+    url('/assets/img/carousel-1.jpg') center / cover no-repeat;
+}
+
+// Skeleton shimmer
+@keyframes shimmer {
+  from {
+    background-position: -400px 0;
+  }
+  to {
+    background-position: 400px 0;
+  }
+}
+%shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+}
+.skeleton-img {
+  @extend %shimmer;
+  padding-top: 75%;
+}
+.skeleton-line {
+  @extend %shimmer;
+  height: 10px;
+  &.w-50 {
+    width: 50%;
+  }
+  &.w-75 {
+    width: 75%;
+  }
+  &.w-40 {
+    width: 40%;
+  }
+}
+
+// AI dots
+.ai-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.2s infinite ease-in-out;
+  &:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  &:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+}
+@keyframes pulse {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+// Auth toast slide-up
+.auth-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  border-radius: 30px;
+  background: #212529;
+  color: #fff;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  transform: translateX(-50%) translateY(80px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+  &--show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.auth-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1;
+  cursor: pointer;
+  &:hover {
+    color: #fff;
+  }
+}

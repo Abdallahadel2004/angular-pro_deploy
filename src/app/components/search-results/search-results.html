@@ -1,0 +1,175 @@
+<div class="container-fluid pt-4 pb-5 px-4 px-lg-5">
+  <!-- ── Header ─────────────────────────────────────────────────────────────── -->
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+    <div>
+      <h5 class="mb-1 fw-bold">
+        Search results for: <span class="text-primary">"{{ query }}"</span>
+      </h5>
+      <small class="text-muted" *ngIf="!isLoading">
+        {{ total }} product{{ total !== 1 ? 's' : '' }} found
+        <span
+          class="badge ms-2"
+          [class.bg-warning]="searchMethod === 'vector'"
+          [class.bg-info]="searchMethod === 'hybrid'"
+          [class.bg-secondary]="searchMethod === 'keyword'"
+          style="font-size: 0.65rem"
+        >
+          {{ getMethodLabel() }}
+        </span>
+      </small>
+    </div>
+
+    <!-- Sort -->
+    <div class="d-flex align-items-center gap-2">
+      <label class="text-muted small mb-0">Sort by:</label>
+      <select
+        class="form-select form-select-sm"
+        style="width: 170px"
+        [(ngModel)]="sortBy"
+        (change)="onSortChange()"
+      >
+        <option *ngFor="let o of sortOptions" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- ── Filters Sidebar ─────────────────────────────────────────────────── -->
+    <div class="col-lg-3 col-xl-2">
+      <div class="filter-card">
+        <div class="filter-title">
+          <i class="fas fa-sliders-h me-2"></i>Filters
+          <button class="btn btn-link btn-sm ms-auto p-0 text-muted" (click)="clearFilters()">
+            Clear all
+          </button>
+        </div>
+
+        <!-- Category -->
+        <div class="filter-section">
+          <div class="filter-section-title">Category</div>
+          <div *ngFor="let cat of categories" class="form-check mb-1">
+            <input
+              class="form-check-input"
+              type="radio"
+              [id]="'cat-' + cat"
+              name="category"
+              [value]="cat"
+              [(ngModel)]="category"
+              (change)="applyFilters()"
+            />
+            <label class="form-check-label small" [for]="'cat-' + cat">{{ cat }}</label>
+          </div>
+        </div>
+
+        <!-- Price Range -->
+        <div class="filter-section">
+          <div class="filter-section-title">Price Range</div>
+          <div class="d-flex gap-2 align-items-center mb-2">
+            <input
+              type="number"
+              class="form-control form-control-sm"
+              placeholder="Min $"
+              [(ngModel)]="minPrice"
+              min="0"
+            />
+            <span class="text-muted small">—</span>
+            <input
+              type="number"
+              class="form-control form-control-sm"
+              placeholder="Max $"
+              [(ngModel)]="maxPrice"
+              min="0"
+            />
+          </div>
+          <button class="btn btn-primary btn-sm w-100" (click)="applyFilters()">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Results Grid ────────────────────────────────────────────────────── -->
+    <div class="col-lg-9 col-xl-10">
+      <!-- Loading skeleton -->
+      <div class="row g-3" *ngIf="isLoading">
+        <div class="col-6 col-md-4 col-xl-3" *ngFor="let s of [1, 2, 3, 4, 5, 6, 7, 8]">
+          <div class="skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-line w-75 mt-2"></div>
+            <div class="skeleton-line w-50 mt-1"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Our Products Start -->
+      <div class="container-fluid product py-5">
+        <div class="container py-5">
+          <div class="tab-class">
+            <div class="row g-4">
+              <!-- Title -->
+              <div class="col-lg-4 text-start wow fadeInLeft" data-wow-delay="0.1s">
+                <h1>Our Products</h1>
+              </div>
+              <!-- Tab Nav -->
+              <div class="col-lg-8 text-end wow fadeInRight" data-wow-delay="0.1s">
+                <ul class="nav nav-pills d-inline-flex text-center mb-5">
+                  <li *ngFor="let tab of tabs" class="nav-item mb-4">
+                    <a
+                      class="d-flex mx-2 py-2 bg-light rounded-pill"
+                      [class.active]="activeTab === tab.id"
+                      href="javascript:void(0)"
+                      (click)="loadTab(tab.id)"
+                    >
+                      <span class="text-dark" style="width: 130px">{{ tab.label }}</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+              <div class="tab-pane fade show active p-0">
+                <div class="row g-4">
+                  <div
+                    *ngFor="let product of products; let i = index"
+                    class="col-md-6 col-lg-4 col-xl-3"
+                  >
+                    <app-product-card
+                      [product]="product"
+                      [wowDelay]="getDelay(i)"
+                      (addToCart)="onAddToCart($event)"
+                      (addToWishlist)="onAddToWishlist($event)"
+                      (quickView)="onQuickView($event)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Our Products End -->
+
+      <!-- Empty state -->
+      <div class="empty-state text-center py-5" *ngIf="!isLoading && products.length === 0">
+        <i class="fas fa-search-minus fa-3x text-muted mb-3 d-block"></i>
+        <h5 class="text-muted">No products found for "{{ query }}"</h5>
+        <p class="text-muted small">Try different keywords or remove filters</p>
+        <button class="btn btn-primary mt-2" (click)="clearFilters()">Clear Filters</button>
+      </div>
+
+      <!-- Pagination -->
+      <nav *ngIf="!isLoading && pages > 1" class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm d-flex flex-row">
+          <li class="page-item" [class.disabled]="page === 1">
+            <button class="page-link" (click)="goToPage(page - 1)">‹</button>
+          </li>
+          <li *ngFor="let p of pageNumbers" class="page-item" [class.active]="page === p">
+            <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
+          </li>
+          <li class="page-item" [class.disabled]="page === pages">
+            <button class="page-link" (click)="goToPage(page + 1)">›</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,7 @@ import { RouterOutlet } from '@angular/router';
 import { Chatbot } from './components/chatbot/chatbot';
 import { ToastComponent } from './components/toast/toast';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
+import { CompareBar } from './components/compare-bar/compare-bar';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
     Chatbot,
     ToastComponent,
     ConfirmDialogComponent,
+    CompareBar,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

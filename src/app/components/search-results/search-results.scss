@@ -1,0 +1,82 @@
+// search-results.scss
+
+// ── Filter sidebar ────────────────────────────────────────────────────────────
+.filter-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  position: sticky;
+  top: 16px;
+}
+
+.filter-title {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filter-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.filter-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+// ── Skeleton loading ──────────────────────────────────────────────────────────
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+%skeleton-base {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0 0 12px;
+}
+
+.skeleton-img {
+  @extend %skeleton-base;
+  width: 100%;
+  padding-top: 75%;
+  border-radius: 0;
+}
+
+.skeleton-line {
+  @extend %skeleton-base;
+  height: 12px;
+  margin: 4px 12px 0;
+  &.w-75 {
+    width: 75%;
+  }
+  &.w-50 {
+    width: 50%;
+  }
+}
