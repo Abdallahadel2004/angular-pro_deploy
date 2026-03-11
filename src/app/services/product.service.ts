@@ -136,8 +136,12 @@ export class ProductService {
 
   // Get raw API product by ID (for detail page with full data)
   getProductDetailById(id: string): Observable<any> {
+    console.log('getProductDetailById called with:', id);
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
-      map((response) => response.product || response),
+      map((response) => {
+        console.log('Product detail response:', response);
+        return response.product || response;
+      }),
       catchError((err) => {
         console.warn('Single product endpoint failed, falling back to full list:', err.status);
         return this.http.get<any>(this.apiUrl).pipe(
