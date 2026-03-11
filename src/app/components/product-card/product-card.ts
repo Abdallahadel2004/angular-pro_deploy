@@ -4,12 +4,14 @@ import { Product } from '../../models/product.model';
 import { RouterLink } from '@angular/router';
 import { WishlistService } from '../../services/wishlist.service';
 import { CartService } from '../../services/cart.service';
+import { CompareService } from '../../services/compare.service';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './product-card.html',
+  styleUrls: ['./product-card.scss'],
 })
 export class ProductCardComponent implements OnInit {
   @Input() product!: Product;
@@ -19,7 +21,6 @@ export class ProductCardComponent implements OnInit {
 
   @Output() addToCart = new EventEmitter<Product>();
   @Output() addToWishlist = new EventEmitter<Product>();
-  @Output() compare = new EventEmitter<Product>();
   @Output() quickView = new EventEmitter<Product>();
   @Output() removed = new EventEmitter<string>(); // emits productId
 
@@ -46,9 +47,16 @@ export class ProductCardComponent implements OnInit {
     }
   }
 
+  compareMessage = '';
+  private messageTimer: any;
+
+  constructor(public compareService: CompareService) {}
+
   get stars(): boolean[] {
     return Array.from({ length: 5 }, (_, i) => i < this.product.rating);
   }
+
+  // ── Wishlist ──────────────────────────────────────────────────────────────
 
   toggleWishlist() {
     if (this.wishlistLoading()) return;
@@ -56,7 +64,6 @@ export class ProductCardComponent implements OnInit {
     console.log('[toggleWishlist] added=', this.wishlistAdded(), '| entryId=', this.entryId());
 
     this.wishlistAdded() ? this.removeFromWishlist() : this.addToWishlistFn();
-    // this.isInWishlist = !this.isInWishlist;
   }
 
   private addToWishlistFn() {
@@ -74,8 +81,6 @@ export class ProductCardComponent implements OnInit {
               p.product === this.product.id.toString() ||
               p.product?._id === this.product.id.toString(),
           );
-
-        // console.log('[addItem] matched entry=', match);
 
         this.isInWishlist = true;
         this.entryId.set(match?._id ?? null);
@@ -111,14 +116,19 @@ export class ProductCardComponent implements OnInit {
     });
   }
 
+  // ── Cart ───────────────────────────────────────────────────────────────────
+
   onAddToCart() {
     if (this.cartLoading()) return;
     this.cartLoading.set(true);
 
+    const rawPrice = this.p.price ?? this.p.newPrice;
+    const price = typeof rawPrice === 'string' ? parseFloat(rawPrice.replace(/[^0-9.]/g, '')) : rawPrice || 0;
+    
     const meta = {
       name: this.product.name,
-      price: parseFloat(this.product.newPrice?.replace(/[^0-9.]/g, '') || '0'),
-      image: this.product.image || 'assets/img/product-3.png',
+      price: price,
+      image: this.p.image || this.p.images?.[0]?.url || 'assets/img/product-3.png'
     };
 
     this.cartService.addToCart(this.product.id.toString(), 1, meta).subscribe({
@@ -130,5 +140,48 @@ export class ProductCardComponent implements OnInit {
       },
       error: () => this.cartLoading.set(false),
     });
+  }
+
+  // ── Compare ────────────────────────────────────────────────────────────────
+
+  private get p(): any {
+    return this.product as any;
+  }
+
+  get productId(): string {
+    return String(this.p._id || this.p.id || '');
+  }
+
+  get isInCompare(): boolean {
+    return this.compareService.isAdded(this.productId);
+  }
+
+  get compareDisabled(): boolean {
+    return this.compareService.isFull() && !this.isInCompare;
+  }
+
+  onCompare(): void {
+    if (this.compareDisabled) return;
+    const rawPrice = this.p.price ?? this.p.newPrice;
+    const price =
+      typeof rawPrice === 'string' ? parseFloat(rawPrice.replace(/[^0-9.]/g, '')) : rawPrice || 0;
+
+    const result = this.compareService.toggle({
+      _id: this.productId,
+      name: this.product.name,
+      price,
+      image: this.p.image || this.p.images?.[0]?.url || null,
+      shortDescription: this.p.shortDescription,
+      description: this.p.description,
+      ratings: this.p.ratings,
+      inventory: this.p.inventory,
+      category: this.p.category,
+      isFeatured: this.p.isFeatured,
+      soldCount: this.p.soldCount,
+    });
+
+    this.compareMessage = result.message;
+    clearTimeout(this.messageTimer);
+    this.messageTimer = setTimeout(() => (this.compareMessage = ''), 2500);
   }
 }

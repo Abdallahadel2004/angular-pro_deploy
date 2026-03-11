@@ -14,7 +14,7 @@ import { ResetPassword } from './components/reset-password/reset-password';
 import { AdminDashboard } from './components/admin-dashboard/admin-dashboard';
 import { Users } from './components/users/users';
 import { AdminLayout } from './components/admin-layout/admin-layout';
-
+import { SearchResults } from './components/search-results/search-results';
 import { CategoryListComponent } from './components/categories/category-list/category-list';
 import { CategoryFormComponent } from './components/categories/category-form/category-form';
 
@@ -26,6 +26,9 @@ import { Dashboard } from './components/dashboard/dashboard';
 import { Wishlist } from './components/wishlist/wishlist';
 import { Addresses } from './components/addresses/addresses';
 import { AccountSettings } from './components/account-settings/account-settings';
+import { ComparePage } from './components/compare-page/compare-page';
+import { VisualSearchComponent } from './components/visual-search/visual-search';
+import { AiSetupBuilderComponent } from './components/ai-setup-builder/ai-setup-builder';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -77,8 +80,15 @@ export const routes: Routes = [
       // add more admin child routes here
     ],
   },
-
+  { path: 'search', component: SearchResults },
+  { path: 'compare', component: ComparePage },
   { path: 'forgot-password', component: ForgotPassword },
+  { path: 'visual-search', component: VisualSearchComponent },
+  {
+    path: 'ai-setup-builder',
+    component: AiSetupBuilderComponent,
+  },
+
   { path: 'reset-password/:id/:token', component: ResetPassword },
   { path: 'profile', component: Orders }, // User profile
   { path: 'orders', component: Orders }, // User profile

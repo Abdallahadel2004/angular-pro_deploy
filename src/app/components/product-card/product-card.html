@@ -1,6 +1,7 @@
 <div class="product-item rounded wow fadeInUp" [attr.data-wow-delay]="wowDelay">
   <div class="product-item-inner border rounded">
     <div class="product-item-inner-item">
+      <!-- Product image → detail page -->
       <a [routerLink]="['/product', product.id]">
         <img
           [src]="product.image"
@@ -9,9 +10,21 @@
           loading="lazy"
         />
       </a>
+
+      <!-- Badge -->
       <div *ngIf="product.badge" [class]="product.badge === 'New' ? 'product-new' : 'product-sale'">
         {{ product.badge }}
       </div>
+
+      <!-- Compare toast message — appears briefly on the card -->
+      <div
+        class="compare-toast"
+        *ngIf="compareMessage"
+        [class.error]="compareMessage.includes('Remove one')"
+      >
+        {{ compareMessage }}
+      </div>
+
       <div class="product-details">
         <a [routerLink]="['/product', product.id]">
           <i class="fa fa-eye fa-1x"></i>
@@ -49,20 +62,30 @@
     <div class="d-flex justify-content-between align-items-center">
       <!-- Stars -->
       <div class="d-flex">
-        <ng-container *ngFor="let filled of stars; let i = index">
+        <ng-container *ngFor="let filled of stars">
           <i class="fas fa-star" [class.text-primary]="filled"></i>
         </ng-container>
       </div>
 
-      <div class="d-flex">
-        <!-- Compare — unchanged -->
+      <!-- Action buttons -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- ── Compare button ─────────────────────────────────────────────── -->
         <a
           href="javascript:void(0)"
-          class="text-primary d-flex align-items-center justify-content-center me-3"
-          (click)="compare.emit(product)"
+          class="compare-btn d-flex align-items-center justify-content-center"
+          [class.active]="isInCompare"
+          [class.disabled-btn]="compareDisabled"
+          (click)="!compareDisabled && onCompare()"
+          [title]="
+            isInCompare
+              ? 'Remove from comparison'
+              : compareDisabled
+                ? 'Max 3 products — remove one first'
+                : 'Add to comparison'
+          "
         >
           <span class="rounded-circle btn-sm-square border">
-            <i class="fas fa-random"></i>
+            <i class="fas fa-balance-scale"></i>
           </span>
         </a>
 

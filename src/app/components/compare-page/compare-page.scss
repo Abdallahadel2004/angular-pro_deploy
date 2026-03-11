@@ -1,0 +1,551 @@
+// compare-page.scss
+$brand: #f28b00;
+$primary: #0d6efd;
+$dark: #1a1a2e;
+$radius: 14px;
+$shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+
+// ── Page shell ────────────────────────────────────────────────────────────────
+.compare-page {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding-bottom: 80px; // space for compare bar
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.compare-header {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.compare-header-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 16px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+.compare-tabs {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.compare-tab {
+  padding: 10px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+  }
+
+  &:hover:not(.active) {
+    color: $dark;
+  }
+}
+
+.tab-badge {
+  background: linear-gradient(135deg, $brand, #f59e0b);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────────
+.compare-loading {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+// ── Body ──────────────────────────────────────────────────────────────────────
+.compare-body {
+  max-width: 1300px;
+  margin: 24px auto;
+  padding: 0 24px;
+}
+
+// ── AI Summary banner ─────────────────────────────────────────────────────────
+.summary-banner {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fde68a;
+  border-radius: $radius;
+  padding: 14px 18px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  color: #78350f;
+}
+
+// ── Comparison Table ──────────────────────────────────────────────────────────
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+
+  thead tr {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.12s;
+
+    &:hover {
+      background: #fafbff;
+    }
+    &:last-child {
+      border-bottom: none;
+    }
+    &.long-row td {
+      vertical-align: top;
+    }
+  }
+
+  th,
+  td {
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: middle;
+  }
+}
+
+// Spec label column (leftmost)
+.spec-label-col {
+  width: 160px;
+  min-width: 140px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f8f9fa;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+// Product columns
+.product-col {
+  min-width: 200px;
+  border-right: 1px solid #f3f4f6;
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.product-header-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0;
+  position: relative;
+}
+
+.product-header-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 8px;
+}
+
+.product-header-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: $dark;
+  line-height: 1.3;
+  max-width: 160px;
+}
+
+.remove-product-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: scale(1.15);
+    background: #dc2626;
+    color: #fff;
+  }
+}
+
+// Empty product slot
+.empty-product-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 160px;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+  font-size: 0.8rem;
+
+  i {
+    font-size: 1.5rem;
+  }
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+}
+
+// Spec value cells
+.spec-value-col {
+  font-size: 0.85rem;
+  color: $dark;
+  border-right: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &.highlight {
+    background: #fffbeb;
+  }
+
+  &.stock-in {
+    color: #15803d;
+    font-weight: 600;
+  }
+  &.stock-out {
+    color: #dc2626;
+  }
+  &.empty-col {
+    color: #d1d5db;
+    text-align: center;
+  }
+}
+
+.best-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #fef9c3, #fde68a);
+  color: #92400e;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+
+  &::before {
+    content: '★';
+    font-size: 0.7rem;
+  }
+}
+
+.stars {
+  color: #f59e0b;
+  letter-spacing: -1px;
+}
+.rating-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+// ── AI Chat Tab ───────────────────────────────────────────────────────────────
+.chat-tab {
+  background: #fff;
+  border-radius: $radius;
+  border: 1px solid #e5e7eb;
+  box-shadow: $shadow;
+  display: flex;
+  flex-direction: column;
+  height: 620px;
+  overflow: hidden;
+}
+
+// Mini product strip at top of chat
+.chat-product-strip {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  background: #f8f9fa;
+  flex-shrink: 0;
+}
+
+.strip-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $dark;
+
+  img {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+  }
+}
+
+// Messages
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 4px;
+  }
+}
+
+.chat-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  animation: fadeUp 0.2s ease;
+
+  &.user {
+    justify-content: flex-end;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $brand, darken($brand, 10%));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.msg-bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  .user & {
+    background: $primary;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .assistant & {
+    background: #f4f5f7;
+    color: $dark;
+    border-bottom-left-radius: 4px;
+  }
+
+  // Typing animation
+  &.typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 12px 16px;
+    width: 60px;
+
+    span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #9ca3af;
+      animation: bounce 1.2s infinite ease-in-out;
+      &:nth-child(1) {
+        animation-delay: 0s;
+      }
+      &:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      &:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+    }
+  }
+}
+
+@keyframes bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+// Suggestion chips
+.suggestions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.suggestion-chip {
+  background: #f0f4ff;
+  border: 1px solid #dbeafe;
+  color: $primary;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+
+  &:hover {
+    background: #dbeafe;
+    transform: translateY(-1px);
+  }
+}
+
+// Input row
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #f3f4f6;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+  &:disabled {
+    background: #f9fafb;
+  }
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: $primary;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.2s,
+    transform 0.15s;
+
+  &:hover:not(:disabled) {
+    background: darken($primary, 8%);
+    transform: scale(1.08);
+  }
+  &:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+  }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .compare-body {
+    padding: 0 12px;
+  }
+  .chat-tab {
+    height: 75vh;
+  }
+  .msg-bubble {
+    max-width: 88%;
+  }
+}
