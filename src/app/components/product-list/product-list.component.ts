@@ -112,15 +112,9 @@ export class ProductListComponent implements OnInit {
   }
 
   onAddToCart(product: Product): void {
-    const meta = {
-      name: product.name,
-      price: parseFloat(product.newPrice?.replace(/[^0-9.]/g, '') || '0'),
-      image: product.image || 'assets/img/product-3.png',
-    };
-    this.cartService.addToCart(product.id.toString(), 1, meta).subscribe({
-      next: () => console.log('Added to cart:', product.name),
-      error: (err) => console.error('Failed to add to cart', err),
-    });
+    // Cart addition is already handled inside ProductCardComponent.onAddToCart()
+    // This handler only receives the event notification — no need to add again.
+    console.log('Added to cart:', product.name);
   }
 
   onAddToWishlist(product: Product): void {

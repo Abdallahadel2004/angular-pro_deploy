@@ -115,7 +115,13 @@ export class ProductCardComponent implements OnInit {
     if (this.cartLoading()) return;
     this.cartLoading.set(true);
 
-    this.cartService.addToCart(this.product.id.toString(), 1).subscribe({
+    const meta = {
+      name: this.product.name,
+      price: parseFloat(this.product.newPrice?.replace(/[^0-9.]/g, '') || '0'),
+      image: this.product.image || 'assets/img/product-3.png',
+    };
+
+    this.cartService.addToCart(this.product.id.toString(), 1, meta).subscribe({
       next: () => {
         this.cartLoading.set(false);
         this.cartAdded.set(true);
