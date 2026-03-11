@@ -73,6 +73,26 @@
           </div>
 
           <div class="form-group">
+            <label>State / Province *</label>
+            <input
+              type="text"
+              placeholder="State / Province"
+              [value]="form().state"
+              (input)="updateForm('state', $any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>ZIP / Postal Code *</label>
+            <input
+              type="text"
+              placeholder="ZIP / Postal Code"
+              [value]="form().zipCode"
+              (input)="updateForm('zipCode', $any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-group">
             <label>Country *</label>
             <input
               type="text"
@@ -128,7 +148,8 @@
             <p class="addr-line">📞 {{ addr.phone }}</p>
           }
           <p class="addr-line">{{ addr.street }}</p>
-          <p class="addr-line">{{ addr.city }}, {{ addr.country }}</p>
+          <p class="addr-line">{{ addr.city }}, {{ addr.state }} {{ addr.zipCode }}</p>
+          <p class="addr-line">{{ addr.country }}</p>
 
           <div class="addr-actions">
             <button class="addr-btn edit" (click)="edit(addr)">✏️ Edit</button>

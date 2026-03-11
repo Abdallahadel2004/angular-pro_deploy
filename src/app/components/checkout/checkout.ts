@@ -6,6 +6,7 @@ import { CartService } from '../../services/cart.service';
 import { PaymentService } from '../../services/payment.service';
 import { CartItem } from '../../models/cart.model';
 import { ShippingAddress } from '../../models/order.model';
+import { Address } from '../addresses/addresses';
 
 @Component({
   selector: 'app-checkout',
@@ -16,6 +17,8 @@ import { ShippingAddress } from '../../models/order.model';
 })
 export class Checkout implements OnInit {
   shippingForm!: FormGroup;
+  savedAddresses: Address[] = [];
+  selectedAddressId: string | null = null;
   paymentMethod: string = 'card';
   submitting = false;
   submitError: string | null = null;
@@ -30,12 +33,28 @@ export class Checkout implements OnInit {
   ngOnInit(): void {
     this.cartService.loadCart();
 
+    const saved = localStorage.getItem('addresses');
+    if (saved) {
+      this.savedAddresses = JSON.parse(saved);
+    }
+
     this.shippingForm = this.fb.group({
       street: ['', [Validators.required, Validators.minLength(5)]],
       city: ['', [Validators.required, Validators.minLength(2)]],
       state: ['', [Validators.required, Validators.minLength(2)]],
       zipCode: ['', [Validators.required, Validators.pattern(/^\d{4,10}$/)]],
       country: ['', [Validators.required, Validators.minLength(2)]],
+    });
+  }
+
+  selectSavedAddress(addr: Address): void {
+    this.selectedAddressId = addr.id;
+    this.shippingForm.patchValue({
+      street: addr.street,
+      city: addr.city,
+      state: addr.state || '',
+      zipCode: addr.zipCode || '',
+      country: addr.country
     });
   }
 
