@@ -6,21 +6,6 @@ import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
 import { Category } from '../../models/category.model';
 
-interface Stats {
-  totalProducts: number;
-  totalOrders: number;
-  totalUsers: number;
-  totalRevenue: number;
-}
-
-interface Order {
-  id: string;
-  customer: string;
-  date: string;
-  total: number;
-  status: string;
-}
-
 interface ProductFormData {
   name: string;
   description: string;
@@ -38,46 +23,7 @@ interface ProductFormData {
   templateUrl: './admin-dashboard.html',
   styleUrls: ['./admin-dashboard.scss'],
 })
-export class AdminDashboard {
-  stats: Stats = {
-    totalProducts: 1234,
-    totalOrders: 567,
-    totalUsers: 8901,
-    totalRevenue: 234567,
-  };
-
-  recentOrders: Order[] = [
-    { id: 'ORD-001', customer: 'John Doe', date: '2024-03-05', total: 299.99, status: 'Completed' },
-    {
-      id: 'ORD-002',
-      customer: 'Jane Smith',
-      date: '2024-03-05',
-      total: 149.5,
-      status: 'Processing',
-    },
-    {
-      id: 'ORD-003',
-      customer: 'Bob Johnson',
-      date: '2024-03-04',
-      total: 549.99,
-      status: 'Pending',
-    },
-    {
-      id: 'ORD-004',
-      customer: 'Alice Williams',
-      date: '2024-03-04',
-      total: 89.99,
-      status: 'Completed',
-    },
-    {
-      id: 'ORD-005',
-      customer: 'Charlie Brown',
-      date: '2024-03-03',
-      total: 399.99,
-      status: 'Cancelled',
-    },
-  ];
-
+export class AdminDashboard implements OnInit {
   // Product form state
   isAddingProduct = false;
   productForm: ProductFormData = {
@@ -87,7 +33,7 @@ export class AdminDashboard {
     category: '',
     sku: '',
     inventory: 0,
-    images: []
+    images: [],
   };
   productFormErrors: { [key: string]: string } = {};
   productFormSuccess = false;
@@ -97,7 +43,7 @@ export class AdminDashboard {
   categoryForm = {
     name: '',
     description: '',
-    image: ''
+    image: '',
   };
   categoryFormErrors: { [key: string]: string } = {};
   categoryFormSuccess = false;
@@ -107,28 +53,11 @@ export class AdminDashboard {
 
   constructor(
     private productService: ProductService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
   ) {}
 
   ngOnInit(): void {
     this.loadCategories();
-  }
-
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'Completed':
-        return 'dot-confirmed';
-      case 'Processing':
-      case 'Pending':
-      case 'Cancelled':
-        return 'dot-pending';
-      default:
-        return 'dot-pending';
-    }
-  }
-
-  trackById(index: number, order: Order): string {
-    return order.id;
   }
 
   // Toggle product form
@@ -156,7 +85,7 @@ export class AdminDashboard {
       category: '',
       sku: '',
       inventory: 0,
-      images: []
+      images: [],
     };
     this.productFormErrors = {};
     this.productFormSuccess = false;
@@ -166,7 +95,7 @@ export class AdminDashboard {
     this.categoryForm = {
       name: '',
       description: '',
-      image: ''
+      image: '',
     };
     this.categoryFormErrors = {};
     this.categoryFormSuccess = false;
@@ -236,32 +165,32 @@ export class AdminDashboard {
       sku: this.productForm.sku,
       inventory: this.productForm.inventory,
       seo: {
-        slug: this.productForm.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        slug: this.productForm.name
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, ''),
       },
       images: this.productForm.images,
       image: this.productForm.images[0] || '',
       oldPrice: `$${this.productForm.price}`,
       newPrice: `$${this.productForm.price}`,
       rating: 4,
-      badge: null
+      badge: null,
     };
 
-    console.log('Creating product with data:', productData);
-    
     this.productService.create(productData).subscribe({
       next: (product) => {
         console.log('Product created successfully:', product);
         this.productFormSuccess = true;
-        // Show success message for 3 seconds then reset
         setTimeout(() => {
           this.resetProductForm();
         }, 3000);
       },
       error: (err) => {
         console.error('Error creating product:', err);
-        console.error('Error details:', err.error);
-        this.productFormErrors['general'] = 'Failed to create product. Please check the console for details.';
-      }
+        this.productFormErrors['general'] =
+          'Failed to create product. Please check the console for details.';
+      },
     });
   }
 
@@ -275,50 +204,37 @@ export class AdminDashboard {
       name: this.categoryForm.name,
       description: this.categoryForm.description,
       image: this.categoryForm.image || '',
-      slug: this.categoryForm.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      slug: this.categoryForm.name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, ''),
     };
 
-    console.log('Creating category with data:', categoryData);
-    
     this.categoryService.create(categoryData).subscribe({
       next: (category) => {
         console.log('Category created successfully:', category);
         this.categoryFormSuccess = true;
-        // Show success message for 3 seconds then reset
         setTimeout(() => {
           this.resetCategoryForm();
         }, 3000);
       },
       error: (err) => {
         console.error('Error creating category:', err);
-        console.error('Error details:', err.error);
-        this.categoryFormErrors['general'] = 'Failed to create category. Please check the console for details.';
-      }
+        this.categoryFormErrors['general'] =
+          'Failed to create category. Please check the console for details.';
+      },
     });
-  }
-
-  // Handle image upload (simple text input for now)
-  addImage(): void {
-    const imageUrl = prompt('Enter image URL:');
-    if (imageUrl) {
-      this.productForm.images.push(imageUrl);
-    }
   }
 
   // Load categories for dropdown
   loadCategories(): void {
-    console.log('Loading categories...');
     this.categoryService.getAll().subscribe({
       next: (categories) => {
-        console.log('Categories loaded successfully:', categories);
         this.categories = categories;
-        console.log('Categories array length:', this.categories.length);
       },
       error: (err) => {
         console.error('Error loading categories:', err);
-        console.error('Error status:', err.status);
-        console.error('Error message:', err.message);
-      }
+      },
     });
   }
 
@@ -326,13 +242,10 @@ export class AdminDashboard {
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file');
         return;
       }
-
-      // Compress and convert to base64
       this.compressImage(file, 800, 0.7, (base64Image: string) => {
         this.productForm.images.push(base64Image);
       });
@@ -340,7 +253,12 @@ export class AdminDashboard {
   }
 
   // Compress image using canvas
-  private compressImage(file: File, maxWidth: number, quality: number, callback: (base64: string) => void): void {
+  private compressImage(
+    file: File,
+    maxWidth: number,
+    quality: number,
+    callback: (base64: string) => void,
+  ): void {
     const reader = new FileReader();
     reader.onload = (e: any) => {
       const img = new Image();
@@ -349,7 +267,6 @@ export class AdminDashboard {
         let width = img.width;
         let height = img.height;
 
-        // Calculate new dimensions while maintaining aspect ratio
         if (width > maxWidth) {
           height = (height * maxWidth) / width;
           width = maxWidth;
@@ -361,7 +278,6 @@ export class AdminDashboard {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Convert to base64 with compression
           const base64 = canvas.toDataURL('image/jpeg', quality);
           callback(base64);
         }
