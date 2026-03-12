@@ -8,6 +8,12 @@ import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { SearchService, SearchProduct } from '../../services/search.service';
 import { VisualSearchService, Product } from '../../services/visual-search.service';
+import { WishlistStateService } from '../../services/wishlist-state.service';
+import { TranslationService } from '../../services/translation.service';
+import { CategoryService } from '../../services/category.service';
+
+// import { NavigationEnd } from '@angular/router';
+// import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
@@ -38,9 +44,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   selectedCurrency = 'USD';
   selectedLanguage = 'English';
 
-  categories = ['All Category', 'Electronics', 'Fashion', 'Gaming', 'Fitness', 'Books', 'Home'];
-  currencies = ['USD', 'Euro', 'Dolar'];
-  languages = ['English', 'Turkish', 'Spanish', 'Italiano'];
+  categories: string[] = ['All Category'];
+  currencies = ['USD', 'EGP', 'SAR'];
+  languages = ['English', 'Arabic'];
 
   sidebarCategories = [
     { name: 'Accessories', count: 3 },
@@ -65,19 +71,45 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
+    public wishlistState: WishlistStateService,
     public authService: AuthService,
     public cartService: CartService,
     private searchService: SearchService,
     private visualSearchService: VisualSearchService,
+    private categoryService: CategoryService,
     private router: Router,
     private elRef: ElementRef,
+    public translationService: TranslationService,
   ) {}
 
   ngOnInit() {
     setTimeout(() => (this.isLoading = false), 500);
     this.cartService.loadCart();
+    this.wishlistState.load();
 
-    // Debounced suggestions pipeline
+    this.categoryService.getAll().pipe(takeUntil(this.destroy$)).subscribe((cats) => {
+      this.categories = ['All Category', ...cats.map((c) => c.name)];
+    });
+
+    // Listen for language change events
+    window.addEventListener('languageChange', this.handleLanguageChange.bind(this));
+
+    // Set initial language from service
+    const currentLang = this.translationService.getCurrentLanguage();
+    this.selectedLanguage = currentLang === 'ar' ? 'Arabic' : 'English';
+
+    // this.router.events
+    //   .pipe(
+    //     filter((e) => e instanceof NavigationEnd),
+    //     takeUntil(this.destroy$),
+    //   )
+    //   .subscribe(() => {
+    //     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    //     if (token) {
+    //       this.wishlistState.load();
+    //     }
+    //   });
+
     this.searchInput$
       .pipe(
         debounceTime(300),
@@ -151,12 +183,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // Main search → /search results page
   onSearch(): void {
     const q = this.searchQuery.trim();
-    if (!q) return;
+    if (!q && this.selectedCategory === 'All Category') return;
     this.closeSuggestions();
     this.router.navigate(['/search'], {
       queryParams: {
-        q,
-        ...(this.selectedCategory !== 'All Category' ? { category: this.selectedCategory } : {}),
+        q: q || null,
+        category: this.selectedCategory !== 'All Category' ? this.selectedCategory : null,
       },
     });
   }
@@ -190,6 +222,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
   logout() {
     this.authService.signout();
     this.isDashboardDropdownOpen = false;
+  }
+
+  switchLanguage(language: string): void {
+    this.translationService.setLanguage(language === 'English' ? 'en' : 'ar');
+    this.selectedLanguage = language;
+    this.isLanguageDropdownOpen = false;
+  }
+
+  private handleLanguageChange(event: any): void {
+    const newLanguage = event.detail.language;
+    this.selectedLanguage = newLanguage === 'ar' ? 'Arabic' : 'English';
   }
 
   // ── Visual Search ─────────────────────────────────────────────────────────

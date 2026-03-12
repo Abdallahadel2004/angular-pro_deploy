@@ -38,7 +38,7 @@ export class ProductDetail implements OnInit {
   canWriteReview = true; // Allow all users to write reviews
   submittingReview = false;
   newReview: CreateReviewRequest = {
-    productId: '',
+    product: '',
     rating: 0,
     comment: '',
     title: ''
@@ -66,8 +66,11 @@ export class ProductDetail implements OnInit {
 
   loadProduct(id: string): void {
     this.loading = true;
+    console.log('Loading product with ID:', id);
+    
     this.productService.getProductDetailById(id).subscribe({
       next: (apiProduct: any) => {
+        console.log('Product loaded successfully:', apiProduct);
         if (apiProduct) {
           // Extract image URLs from API response
           let images: string[] = [];
@@ -148,12 +151,20 @@ export class ProductDetail implements OnInit {
   }
 
   submitReview(): void {
+    console.log('===== SUBMIT REVIEW CLICKED =====');
+    console.log('Product object:', this.product);
+    console.log('Product ID:', this.product?.id);
+    console.log('New review:', this.newReview);
+    
     if (!this.product || this.submittingReview) {
+      console.log('Returning early - no product or already submitting');
       return;
     }
 
     this.submittingReview = true;
-    this.newReview.productId = this.product.id.toString();
+    this.newReview.product = this.product.id.toString();
+    
+    console.log('Submitting review for product ID:', this.newReview.product);
 
     this.reviewService.createReview(this.newReview).subscribe({
       next: (response) => {
@@ -164,7 +175,7 @@ export class ProductDetail implements OnInit {
           
           // Reset form
           this.newReview = {
-            productId: this.product!.id.toString(),
+            product: this.product!.id.toString(),
             rating: 0,
             comment: '',
             title: ''

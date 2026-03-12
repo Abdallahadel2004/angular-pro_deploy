@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Category } from '../models/category.model';
 import { environment } from '../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -14,8 +15,20 @@ export class CategoryService {
 
   // Get all categories from API
   getAll(): Observable<Category[]> {
-    return this.http.get<any[]>(this.apiUrl).pipe(
-      map(categories => categories.map(category => this.mapApiToCategory(category)))
+    console.log('CategoryService: Getting all categories from:', this.apiUrl);
+    return this.http.get<any>(this.apiUrl).pipe(
+      map(response => {
+        console.log('CategoryService: Raw API response:', response);
+        // Handle both array and object response formats
+        const categories = Array.isArray(response) ? response : response.categories;
+        if (!categories) {
+          console.log('CategoryService: No categories found in response');
+          return [];
+        }
+        const mappedCategories = (categories as any[]).map((category: any) => this.mapApiToCategory(category));
+        console.log('CategoryService: Mapped categories:', mappedCategories);
+        return mappedCategories;
+      })
     );
   }
 

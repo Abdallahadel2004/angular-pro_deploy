@@ -11,6 +11,7 @@ import { environment } from '../environments/environment';
 export class ProductService {
   private apiUrl = `${environment.apiUrl}/api/products`;
 
+  //private apiUrl = 'https://back-omega-amber.vercel.app/api/products';
   constructor(private http: HttpClient) {}
 
   // Get all products from API
@@ -34,30 +35,49 @@ export class ProductService {
   }
 
   // Get full paginated response
-  getPaginated(page: number = 1, limit: number = 10): Observable<{ products: Product[], total: number, page: number, pages: number }> {
+  getPaginated(
+    page: number = 1,
+    limit: number = 10,
+  ): Observable<{ products: Product[]; total: number; page: number; pages: number }> {
     return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}`).pipe(
-      map(response => {
+      map((response) => {
         const products = response.products || response;
         const mappedProducts = (Array.isArray(products) ? products : []).map((p: any) =>
-          this.mapApiToProduct(p)
+          this.mapApiToProduct(p),
         );
         return {
           products: mappedProducts,
           total: response.total || mappedProducts.length,
           page: response.page || 1,
-          pages: response.pages || 1
+          pages: response.pages || 1,
         };
-      })
+      }),
     );
   }
 
   // Add a new product to the API
-  create(product: Omit<Product, 'id' | 'tab'>): Observable<Product> {
-    console.log('Creating product with data:', product);
+  create(product: any): Observable<Product> {
+    console.log('Creating product with data, images:', product.images);
     return this.http.post<any>(this.apiUrl, product).pipe(
       map((response) => {
         console.log('Product API response:', response);
-        return this.mapApiToProduct(response);
+        // Handle nested response format {success: true, product: {...}}
+        const productData = response.product || response;
+        
+        console.log('productData.images:', productData.images);
+        console.log('input product.images:', product.images);
+        
+        // If backend doesn't return images, use the ones we sent
+        const mappedProduct = this.mapApiToProduct(productData);
+        const hasNoImages = !productData.images || !productData.images.length || 
+                           (productData.images.length === 1 && !productData.images[0]);
+        
+        if (hasNoImages && product.images && product.images.length > 0) {
+          console.log('Using input images since backend didn\'t return any');
+          console.log('Setting image to:', product.images[0]);
+          mappedProduct.image = product.images[0] || mappedProduct.image;
+        }
+        return mappedProduct;
       }),
     );
   }
@@ -66,7 +86,11 @@ export class ProductService {
   update(id: string, product: Partial<Product>): Observable<Product> {
     return this.http
       .put<any>(`${this.apiUrl}/${id}`, product)
-      .pipe(map((response) => this.mapApiToProduct(response)));
+      .pipe(map((response) => {
+        // Handle nested response format {success: true, product: {...}}
+        const productData = response.product || response;
+        return this.mapApiToProduct(productData);
+      }));
   }
 
   // Delete a product
@@ -75,7 +99,11 @@ export class ProductService {
   }
 
   // Get products by tab (all, new, featured, top)
-  getByTab(tab: 'all' | 'new' | 'featured' | 'top', page?: number, limit?: number): Observable<Product[]> {
+  getByTab(
+    tab: 'all' | 'new' | 'featured' | 'top',
+    page?: number,
+    limit?: number,
+  ): Observable<Product[]> {
     return this.getAll(page, limit).pipe(
       map((products) => {
         if (tab === 'all') return products;
@@ -87,13 +115,17 @@ export class ProductService {
     );
   }
 
-  getPaginatedByTab(tab: 'all' | 'new' | 'featured' | 'top', page: number = 1, limit: number = 10): Observable<{ products: Product[], total: number, page: number, pages: number }> {
-     return this.getPaginated(page, limit).pipe(
-        map((res) => {
-           if (tab === 'all') return res;
-           return res; // let API handle filters later
-        })
-     )
+  getPaginatedByTab(
+    tab: 'all' | 'new' | 'featured' | 'top',
+    page: number = 1,
+    limit: number = 10,
+  ): Observable<{ products: Product[]; total: number; page: number; pages: number }> {
+    return this.getPaginated(page, limit).pipe(
+      map((res) => {
+        if (tab === 'all') return res;
+        return res; // let API handle filters later
+      }),
+    );
   }
 
   // Get product by ID - with fallback to full list if single-product endpoint fails
@@ -116,8 +148,12 @@ export class ProductService {
 
   // Get raw API product by ID (for detail page with full data)
   getProductDetailById(id: string): Observable<any> {
+    console.log('getProductDetailById called with:', id);
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
-      map((response) => response.product || response),
+      map((response) => {
+        console.log('Product detail response:', response);
+        return response.product || response;
+      }),
       catchError((err) => {
         console.warn('Single product endpoint failed, falling back to full list:', err.status);
         return this.http.get<any>(this.apiUrl).pipe(
@@ -133,19 +169,48 @@ export class ProductService {
 
   // Map API response to Product interface
   private mapApiToProduct(apiProduct: any): Product {
-    // Extract image URL - API returns images as [{url: "...", ...}]
+    console.log('DEBUG: Mapping product, raw response:', JSON.stringify(apiProduct).substring(0, 500));
+    
     let imageUrl = 'assets/img/product-1.png';
+    
     if (apiProduct.images && apiProduct.images.length > 0) {
-      imageUrl = apiProduct.images[0].url || apiProduct.images[0] || imageUrl;
+      const firstImage = apiProduct.images[0];
+      console.log('DEBUG: First image:', firstImage);
+      
+      if (typeof firstImage === 'string') {
+        imageUrl = firstImage || imageUrl;
+      } else if (firstImage && typeof firstImage === 'object') {
+        imageUrl = firstImage.url || firstImage.uri || imageUrl;
+      }
     }
+    // Also check for direct 'image' property
+    if (!imageUrl || imageUrl === 'assets/img/product-1.png') {
+      if (apiProduct.image) {
+        console.log('DEBUG: Using direct image property:', apiProduct.image);
+        imageUrl = apiProduct.image;
+      }
+    }
+    
+    console.log('DEBUG: Final imageUrl:', imageUrl);
 
     const price = apiProduct.price || 0;
     const compareAtPrice = apiProduct.compareAtPrice || price;
+    
+    // Handle category - can be string ID, object with name, or shortDescription fallback
+    let category = 'Electronics';
+    if (apiProduct.category) {
+      if (typeof apiProduct.category === 'object') {
+        category = apiProduct.category.name || apiProduct.shortDescription || 'Electronics';
+      } else {
+        // Category is a string ID - we can't display the name without fetching it
+        category = apiProduct.shortDescription || 'Electronics';
+      }
+    }
 
     return {
       id: apiProduct._id || apiProduct.id || Math.random(),
       image: imageUrl,
-      category: apiProduct.category?.name || apiProduct.shortDescription || 'Electronics',
+      category: category,
       name: apiProduct.name || 'Unknown Product',
       oldPrice: `$${compareAtPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
       newPrice: `$${price.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
