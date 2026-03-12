@@ -47,9 +47,40 @@
         <div class="row g-4">
             <!-- Left Column: Shipping & Payment -->
             <div class="col-lg-7">
+                <!-- Saved Addresses -->
+                @if (savedAddresses.length > 0) {
+                <div class="bg-light rounded p-4 mb-4">
+                    <h4 class="mb-3"><i class="fas fa-address-book me-2"></i>Saved Addresses</h4>
+                    <div class="row g-3">
+                        @for (addr of savedAddresses; track addr.id) {
+                        <div class="col-md-6">
+                            <div class="card h-100 cursor-pointer transition-all border-2"
+                                [class.border-primary]="selectedAddressId === addr.id"
+                                [class.bg-white]="selectedAddressId === addr.id"
+                                (click)="selectSavedAddress(addr)">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 fw-bold">
+                                            <i class="fas fa-map-marker-alt text-primary me-2"></i>{{ addr.label }}
+                                        </h6>
+                                        @if (addr.isDefault) {
+                                            <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">Default</span>
+                                        }
+                                    </div>
+                                    <p class="mb-1 small text-dark"><i class="fas fa-user-circle me-1 text-muted"></i> {{ addr.fullName }}</p>
+                                    <p class="mb-1 small text-muted"><i class="fas fa-route me-1"></i> {{ addr.street }}</p>
+                                    <p class="mb-0 small text-muted"><i class="fas fa-city me-1"></i> {{ addr.city }}, {{ addr.country }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+
                 <!-- Shipping Address -->
                 <div class="bg-light rounded p-4 mb-4">
-                    <h4 class="mb-3"><i class="fas fa-shipping-fast me-2"></i>Shipping Address</h4>
+                    <h4 class="mb-3"><i class="fas fa-shipping-fast me-2"></i>{{ selectedAddressId ? 'Complete Shipping Details' : 'Shipping Address' }}</h4>
                     <form [formGroup]="shippingForm">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Street Address *</label>
@@ -124,12 +155,12 @@
 
                         <!-- Cash on Delivery -->
                         <div class="payment-option d-flex align-items-center p-3 rounded border"
-                            [class.border-primary]="paymentMethod === 'cash'"
-                            [class.bg-white]="paymentMethod === 'cash'" (click)="selectPaymentMethod('cash')"
+                            [class.border-primary]="paymentMethod === 'cash_on_delivery'"
+                            [class.bg-white]="paymentMethod === 'cash_on_delivery'" (click)="selectPaymentMethod('cash_on_delivery')"
                             style="cursor: pointer">
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="paymentMethod"
-                                    [checked]="paymentMethod === 'cash'" (change)="selectPaymentMethod('cash')" />
+                                    [checked]="paymentMethod === 'cash_on_delivery'" (change)="selectPaymentMethod('cash_on_delivery')" />
                             </div>
                             <i class="fas fa-money-bill-wave fa-lg text-success me-3"></i>
                             <div>

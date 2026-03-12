@@ -10,6 +10,8 @@ export interface Address {
   phone: string;
   street: string;
   city: string;
+  state: string;
+  zipCode: string;
   country: string;
   isDefault: boolean;
 }
@@ -32,6 +34,8 @@ export class Addresses implements OnInit {
     phone: '',
     street: '',
     city: '',
+    state: '',
+    zipCode: '',
     country: '',
     isDefault: false,
   });
@@ -47,7 +51,7 @@ export class Addresses implements OnInit {
   save() {
     const raw = localStorage.getItem('user') || sessionStorage.getItem('user');
     const f = this.form();
-    if (!f.fullName || !f.street || !f.city || !f.country) return;
+    if (!f.fullName || !f.street || !f.city || !f.state || !f.zipCode || !f.country) return;
 
     const editId = this.editingId();
     if (editId) {
@@ -91,6 +95,8 @@ export class Addresses implements OnInit {
       phone: '',
       street: '',
       city: '',
+      state: '',
+      zipCode: '',
       country: '',
       isDefault: false,
     });

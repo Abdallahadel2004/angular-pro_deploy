@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
+import { Category } from '../../models/category.model';
 
 interface ProductFormData {
   name: string;
@@ -22,7 +23,7 @@ interface ProductFormData {
   templateUrl: './admin-dashboard.html',
   styleUrls: ['./admin-dashboard.scss'],
 })
-export class AdminDashboard {
+export class AdminDashboard implements OnInit {
   // Product form state
   isAddingProduct = false;
   productForm: ProductFormData = {
@@ -47,10 +48,17 @@ export class AdminDashboard {
   categoryFormErrors: { [key: string]: string } = {};
   categoryFormSuccess = false;
 
+  // Categories for dropdown
+  categories: Category[] = [];
+
   constructor(
     private productService: ProductService,
     private categoryService: CategoryService,
   ) {}
+
+  ngOnInit(): void {
+    this.loadCategories();
+  }
 
   // Toggle product form
   toggleProductForm(): void {
@@ -218,6 +226,68 @@ export class AdminDashboard {
     });
   }
 
+  // Load categories for dropdown
+  loadCategories(): void {
+    this.categoryService.getAll().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+      },
+    });
+  }
+
+  // Handle file upload for product images with compression
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      this.compressImage(file, 800, 0.7, (base64Image: string) => {
+        this.productForm.images.push(base64Image);
+      });
+    }
+  }
+
+  // Compress image using canvas
+  private compressImage(
+    file: File,
+    maxWidth: number,
+    quality: number,
+    callback: (base64: string) => void,
+  ): void {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const base64 = canvas.toDataURL('image/jpeg', quality);
+          callback(base64);
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Remove image from product form
   removeImage(index: number): void {
     this.productForm.images.splice(index, 1);
   }

@@ -14,7 +14,8 @@ import {
   providedIn: 'root'
 })
 export class ReviewService {
-  private apiUrl = `${environment.apiUrl}/api/reviews`;
+  // Using localhost backend
+  private apiUrl = 'http://localhost:3000/api/reviews';
 
   constructor(private http: HttpClient) {}
 
@@ -40,8 +41,8 @@ export class ReviewService {
 
   /** Create a new review for a product */
   createReview(reviewData: CreateReviewRequest): Observable<ReviewResponse> {
-    // Remove authentication requirement - allow reviews without login
-    // Add error handling for product not found
+    console.log('Review Service API URL:', this.apiUrl);
+    console.log('Creating review with data:', reviewData);
     return this.http.post<ReviewResponse>(`${this.apiUrl}`, reviewData).pipe(
       catchError((err) => {
         console.error('Failed to create review:', err);
